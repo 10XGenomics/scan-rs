@@ -1,0 +1,28 @@
+[package]
+name = "bhtsne"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+build = "build.rs"
+links = "bhtsne"
+include = [
+    "build.rs",
+    "wrapper.h",
+    "src/bindings.rs",
+    "src/lib.rs",
+    "contrib/tsne/LICENSE",
+    "contrib/tsne/tsne/bh_sne_src/LICENSE.txt",
+    "contrib/tsne/tsne/bh_sne_src/sptree.cpp",
+    "contrib/tsne/tsne/bh_sne_src/sptree.h",
+    "contrib/tsne/tsne/bh_sne_src/tsne.cpp",
+    "contrib/tsne/tsne/bh_sne_src/tsne.h",
+    "contrib/tsne/tsne/bh_sne_src/vptree.h",
+]
+
+[dependencies]
+ndarray = "0.15"
+smart-default = "*"
+
+[build-dependencies]
+cc = "*"

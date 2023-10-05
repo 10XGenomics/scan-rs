@@ -1,0 +1,35 @@
+[package]
+name = "sqz"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+include = ["src/**/*", "README.md"]
+
+[dependencies]
+anyhow = "1"
+blas-src = { path = "../blas-src", optional = true }
+itertools.workspace = true
+log ="*"
+multiversion = "0.7"
+ndarray = "0.15"
+num-traits = "0.2"
+rand = "0.8"
+rayon = "*"
+sprs = { version = "0.11", default-features = false, features = ["multi_thread"] }
+snoop = { path = "../snoop" }
+
+[dev-dependencies]
+approx = "0.4"
+criterion = "*"
+ndarray-rand = "0.14"
+ndarray-stats = "0.5"
+noisy_float = "0.2"
+rand_pcg = "0.3"
+
+[[bench]]
+name = "my_benchmark"
+harness = false
+
+[features]
+blas = ["dep:blas-src"]

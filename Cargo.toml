@@ -1,0 +1,40 @@
+[workspace]
+members = [
+    "bhtsne",
+    "blas-src",
+    "cephes",
+    "diff-exp",
+    "leiden",
+    "hclust",
+    "hdf5-io",
+    "scan-rs",
+    "snoop",
+    "sqz",
+    "tools",
+    "umap-rs",
+]
+resolver = "2"
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = true
+opt-level = 3
+
+[profile.test]
+opt-level = 3
+
+[workspace.dependencies]
+itertools = ">=0.10"
+
+# DO NOT CHANGE THIS WITHOUT LANCE'S OR PAT'S EXPLICIT PERMISSION
+# This provides static linking of mkl, which is crucial for deployment in Loupe.
+# Additionally, this crate must be provided outside scan-rs due to changes in
+# rust 1.46.0 which changed the linking order of local crates to precede
+# upstream crates. This unfortunately prevents us from bundling it here.
+# [patch.crates-io.intel-mkl-src]
+# git = "https://github.com/nlhepler/rust-intel-mkl.git"
+# rev = "aa327092b9d86637eba9a593e6317b0f5e6eb0b9"

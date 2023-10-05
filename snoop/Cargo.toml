@@ -1,0 +1,7 @@
+[package]
+name = "snoop"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+include = ["src/**/*", "README.md"]
