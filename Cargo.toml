@@ -1,0 +1,31 @@
+[workspace]
+members = [
+    "bhtsne",
+    "blas-src",
+    "cephes",
+    "diff-exp",
+    "leiden",
+    "hclust",
+    "hdf5-io",
+    "scan-rs",
+    "snoop",
+    "sqz",
+    "tools",
+    "umap-rs",
+]
+resolver = "2"
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = true
+opt-level = 3
+
+[profile.test]
+opt-level = 3
+
+[workspace.dependencies]
+itertools = ">=0.10"

@@ -1,0 +1,13 @@
+[package]
+name = "hclust"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+
+[dependencies]
+itertools.workspace = true
+kodama = "0.3.0"
+ndarray = "0.15"
+num-traits = "0.2.16"
+petgraph = "0.6.3"

@@ -1,0 +1,18 @@
+[package]
+name = "tools"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+include = ["src/**/*"]
+
+[[bin]]
+name = "scan-rs-cmd"
+path = "src/bin/cmd.rs"
+
+[dependencies]
+anyhow = "1"
+clap = "4"
+flate2 = "*"
+ndarray = { version = "0.15", features = ["rayon"] }
+scan-rs = { path = "../scan-rs" }

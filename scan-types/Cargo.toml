@@ -1,0 +1,14 @@
+[package]
+name = "scan-types"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+sqz = { path = "../sqz" }
+sprs = { version = "0.11", default-features = false, features = [
+    "multi_thread",
+] }
+serde = { version = "*", features = ["derive"] }

@@ -1,0 +1,20 @@
+[package]
+name = "hdf5-io"
+version = "0.1.0"
+authors = ["10x Genomics"]
+license-file = "../LICENSE"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+ndarray = "0.15"
+rayon = "*"
+scan-types = { path = "../scan-types" }
+sprs = { version = "0.11", default-features = false, features = ["multi_thread"] }
+sqz = { path = "../sqz" }
+
+[dependencies.hdf5]
+git = "https://github.com/10XGenomics/hdf5-rust.git"
+branch = "conda_nov2021"
+package = "hdf5"
+features = ["conda"]
