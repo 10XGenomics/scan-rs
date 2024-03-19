@@ -1,9 +1,8 @@
+use crate::fast_local_moving::FastLocalMoving;
+use crate::local_merging::LocalMerging;
 use crate::{Clustering, Network, ZeroVec};
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
-
-use crate::fast_local_moving::FastLocalMoving;
-use crate::local_merging::LocalMerging;
 
 /// Perform the Leiden clustering algorithm
 pub struct Leiden {

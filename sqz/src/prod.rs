@@ -1,11 +1,9 @@
-use crate::{mat::AdaptiveMatNum, AbstractVec, AdaptiveMat};
-use crate::{AdaptiveVec, MatrixMap};
+use crate::mat::AdaptiveMatNum;
+use crate::{ada_expand, AbstractVec, AdaptiveMat, AdaptiveVec, MatrixMap};
 use multiversion::multiversion;
 use ndarray::{ArrayBase, ArrayView, ArrayViewMut, Axis, Ix1, Ix2};
 use num_traits::Num;
 use std::ops::{Deref, Mul};
-
-use crate::ada_expand;
 
 /// Multiply the sparse matrix `lhs` by the dense matrix `rhs`, accumulating results into the dense matrix view `out`.
 pub fn mat_densemat_mult<'a, 'b, N, D, M, A, DS>(

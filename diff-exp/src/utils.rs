@@ -1,13 +1,11 @@
 #[allow(unused_imports)]
 use crate::diff_exp;
-
-#[cfg(hdf5)]
-use scan_types::matrix::AdaptiveFeatureBarcodeMatrix;
-
 #[cfg(hdf5)]
 use anyhow::{format_err, Error};
 #[cfg(hdf5)]
 use hdf5_rs::Group;
+#[cfg(hdf5)]
+use scan_types::matrix::AdaptiveFeatureBarcodeMatrix;
 #[cfg(hdf5)]
 use std::path::Path;
 

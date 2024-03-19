@@ -19,9 +19,11 @@ num-traits = "0.2"
 plotly = { version = "*", default-features = false, optional = true }
 rand = { version = "0.8" }
 rand_pcg = "0.3"
-rayon = "*"
+rayon = "1"
 simd_euclidean = { git = "https://github.com/lazear/simd-euclidean.git", rev = "7b456d5" }
-sprs = { version = "0.11", default-features = false, features = ["multi_thread"] }
+sprs = { version = "0.11", default-features = false, features = [
+    "multi_thread",
+] }
 vpsearch = "*"
 
 [dev-dependencies]

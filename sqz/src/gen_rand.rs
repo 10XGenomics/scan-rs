@@ -1,11 +1,9 @@
+use crate::{AdaptiveMat, AdaptiveVec};
 use ndarray::Array2;
+use num_traits::{One, Zero};
 use rand::distributions::uniform::SampleUniform;
 use rand::prelude::Rng;
-use std::fmt;
-use std::iter;
-
-use crate::{AdaptiveMat, AdaptiveVec};
-use num_traits::{One, Zero};
+use std::{fmt, iter};
 
 trait Gen: Sized + fmt::Debug {
     fn gen<R: Rng + ?Sized>(rng: &mut R) -> Self;

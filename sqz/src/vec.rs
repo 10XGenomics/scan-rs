@@ -1,7 +1,6 @@
 use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
-use ndarray::arr1;
-use ndarray::Array1;
+use ndarray::{arr1, Array1};
 use num_traits::cast::{NumCast, ToPrimitive};
 use num_traits::{Bounded, Zero};
 use std::mem::size_of;

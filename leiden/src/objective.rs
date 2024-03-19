@@ -1,6 +1,4 @@
-use crate::Clustering;
-use crate::Network;
-
+use crate::{Clustering, Network};
 use rayon::iter::ParallelIterator;
 use rayon::prelude::*;
 

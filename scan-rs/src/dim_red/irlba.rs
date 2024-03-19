@@ -1,21 +1,16 @@
 #![allow(non_snake_case)]
 
 use super::{DataMat, Pca, PcaResult};
+use ndarray::linalg::Dot;
+use ndarray::prelude::*;
+use ndarray::{s, Array1, Array2, LinalgScalar};
+use ndarray_linalg::SVD;
+use ndarray_rand::RandomExt;
+use num_traits::Float;
+use rand_distr::Normal;
+use snoop::CancelProgress;
 use std::cmp::{max, min};
 use std::ops::Mul;
-
-use ndarray::prelude::*;
-use ndarray::s;
-use ndarray::LinalgScalar;
-use ndarray_linalg::SVD;
-use snoop::CancelProgress;
-
-use num_traits::Float;
-
-use ndarray::linalg::Dot;
-use ndarray::{Array1, Array2};
-use ndarray_rand::RandomExt;
-use rand_distr::Normal;
 
 fn norm<T: LinalgScalar + Mul + Float>(x: &ArrayView1<T>) -> T {
     x.fold(T::zero(), |sum, v| sum + (*v) * (*v)).sqrt()

@@ -333,8 +333,7 @@ pub mod test {
     use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};
     use rand::distributions::Uniform;
-    use rand::prelude::SeedableRng;
-    use rand::prelude::*;
+    use rand::prelude::{SeedableRng, *};
     use rand_pcg::Pcg64Mcg;
 
     // stolen from ndarray - not currently exported.

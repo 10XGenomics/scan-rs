@@ -1,12 +1,11 @@
 #![allow(non_snake_case)]
 
-use super::{DataMat, Pca};
-
-use super::PcaResult;
+use super::{DataMat, Pca, PcaResult};
 use anyhow::{format_err, Error};
 use ndarray::linalg::Dot;
 use ndarray::{s, Array2, ArrayView2};
-use ndarray_linalg::{svddc::JobSvd, SVDDCInto, QR};
+use ndarray_linalg::svddc::JobSvd;
+use ndarray_linalg::{SVDDCInto, QR};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
 use rand::SeedableRng;

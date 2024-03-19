@@ -3,21 +3,17 @@
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 pub mod rand_test {
-    use std::{
-        io::Error,
-        path::{Path, PathBuf},
-    };
-
+    use crate::dist::DistanceType;
+    use crate::umap::Umap;
     use ndarray::{Array1, Array2};
-    use rand_distr::{Distribution, Gamma, Uniform};
-    use rand_pcg::Pcg64Mcg;
-
     use ndarray_rand::RandomExt;
     use rand::SeedableRng;
-    use rand_distr::Normal;
-    use serde::{de::DeserializeOwned, Deserialize, Serialize};
-
-    use crate::{dist::DistanceType, umap::Umap};
+    use rand_distr::{Distribution, Gamma, Normal, Uniform};
+    use rand_pcg::Pcg64Mcg;
+    use serde::de::DeserializeOwned;
+    use serde::{Deserialize, Serialize};
+    use std::io::Error;
+    use std::path::{Path, PathBuf};
     const N_NEIGHBORS: usize = 30;
     const MIN_DIST: f64 = 0.3;
     const N_COMPONENTS: usize = 2;
@@ -66,12 +62,12 @@ pub mod rand_test {
         let umap = Umap::new(Some(metric), N_COMPONENTS, MIN_DIST, spread, N_NEIGHBORS, None);
 
         let embedding = if parallel {
-            let mut state = umap.initialize_fit_parallelized(projection, None);
+            let mut state = umap.initialize_fit_parallelized(projection, None, 1);
             state.optimize_multithreaded(2);
             state.optimize();
             state.get_embedding().clone()
         } else {
-            let mut state = umap.initialize_fit_parallelized(projection, None);
+            let mut state = umap.initialize_fit_parallelized(projection, None, 1);
             state.optimize_multithreaded(2);
             state.get_embedding().clone()
         };

@@ -1,7 +1,5 @@
-use crate::{
-    func_1d::Func1D,
-    utils::{lu_decomp, lu_matrix_solve, matrix_solve},
-};
+use crate::func_1d::Func1D;
+use crate::utils::{lu_decomp, lu_matrix_solve, matrix_solve};
 use log::info;
 use ndarray::{s, Array1, Array2};
 

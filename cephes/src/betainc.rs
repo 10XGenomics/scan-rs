@@ -1,7 +1,5 @@
-use crate::{
-    beta, betaln,
-    consts::{MACHEP, MAXLOG, MINLOG},
-};
+use crate::consts::{MACHEP, MAXLOG, MINLOG};
+use crate::{beta, betaln};
 
 const MAXGAM: f64 = 34.844_256_272_771_76;
 

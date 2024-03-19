@@ -1,8 +1,6 @@
-use num_traits::{
-    bounds::Bounded,
-    cast::AsPrimitive,
-    identities::{One, Zero},
-};
+use num_traits::bounds::Bounded;
+use num_traits::cast::AsPrimitive;
+use num_traits::identities::{One, Zero};
 use std::convert::{From, TryFrom};
 use std::iter::{repeat, FlatMap, Iterator, Repeat, Zip};
 use std::ops::{Add, AddAssign};
@@ -88,7 +86,7 @@ where
     NodeIx: IndexTrait,
 {
     target: Index<NodeIx>,
-    weight: W,
+    pub(crate) weight: W,
 }
 
 pub struct Edges<'a, W, NodeIx = usize>
@@ -192,7 +190,7 @@ where
     NodeIx: IndexTrait,
     <NodeIx as TryFrom<usize>>::Error: std::fmt::Debug,
 {
-    edges: Vec<Vec<DiEdge<EdgeW, NodeIx>>>,
+    pub(crate) edges: Vec<Vec<DiEdge<EdgeW, NodeIx>>>,
     node_weights: Vec<NodeW>,
     total_edges: usize,
     total_nodes: NodeIx,

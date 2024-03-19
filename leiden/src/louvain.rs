@@ -1,9 +1,8 @@
+use crate::standard_local_moving::StandardLocalMoving;
+use crate::{Clustering, Graph, Network};
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 use std::collections::HashSet;
-
-use crate::standard_local_moving::StandardLocalMoving;
-use crate::{Clustering, Graph, Network};
 
 /// Perform the Louvain clustering algorithm
 pub struct Louvain {

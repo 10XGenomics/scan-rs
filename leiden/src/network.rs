@@ -1,7 +1,8 @@
-use crate::{
-    graph::{Edges, UnGraph},
-    Clustering,
-};
+use rayon::prelude::{IndexedParallelIterator, ParallelIterator};
+use rayon::slice::ParallelSlice;
+
+use crate::graph::{Edges, UnGraph};
+use crate::Clustering;
 use std::collections::HashMap;
 
 /// Undirected graph with f32 node weights and f32 edge weights. Used to represent the network being clustered.
@@ -84,6 +85,28 @@ impl Network {
         self.graph
             .edge_references()
             .fold(0.0, |acc, edge| acc + *edge.weight() as f64)
+    }
+
+    /// Get the total edge weight of all nodes in the graph
+    pub fn get_total_edge_weight_par(&self) -> f64 {
+        let mut partial_sums = vec![];
+
+        // sum up the edge weights in parallelized over chunks, then sum the chunks to ensure
+        // a deterministic result.  Just allow double counting of edge weights, and fix at the end
+        // almost certainly faster than filtering on the fly.
+        self.graph
+            .edges
+            .par_chunks(256)
+            .map(|node_chunk| {
+                node_chunk
+                    .iter()
+                    .map(|w| w.iter().fold(0.0, |acc, edge| acc + edge.weight as f64))
+                    .sum::<f64>()
+            })
+            .collect_into_vec(&mut partial_sums);
+
+        // divide edge sum by 2 to account for double-counting
+        partial_sums.iter().sum::<f64>() / 2.0
     }
 
     /// Tabulate the total edge weight of each node into `result`

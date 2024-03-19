@@ -91,6 +91,7 @@ fn run_leiden() {
 
     let (g, true_clusters) = gen_sample_network(&mut rng, num_clusters, nodes_per_cluster, 10.0, 0.4);
     let n = Network { graph: g };
+    check_edge_weight_par(&n);
 
     println!("best cpm: {}", cpm(DEFAULT_RESOLUTION, &n, &true_clusters));
 
@@ -104,6 +105,7 @@ fn run_leiden() {
         let update = l.iterate(&n, &mut c);
 
         let score = cpm(DEFAULT_RESOLUTION, &n, &c);
+        check_edge_weight_par(&n);
         println!("iter: {i}, cpm: {score}");
 
         if !update {
@@ -167,6 +169,7 @@ fn run_louvain() -> std::io::Result<()> {
         (nodes.len(), adjacency)
     };
     let network = Louvain::build_network(n_nodes, adjacency.len(), adjacency.into_iter());
+    check_edge_weight_par(&network);
     println!(
         "nodes: {:?}\nedges: {:?}",
         network.graph.node_count(),
@@ -180,6 +183,7 @@ fn run_louvain() -> std::io::Result<()> {
     for iter in 1.. {
         let updated = louvain.iterate_one_level(&network, &mut clustering);
         let new_score = cpm(resolution, &network, &clustering);
+        check_edge_weight_par(&network);
         if !updated || new_score - score <= DEFAULT_EPSILON {
             score = new_score;
             break;
@@ -259,6 +263,7 @@ fn run_louvain_parallel() -> std::io::Result<()> {
         (nodes.len(), adjacency)
     };
     let network = Louvain::build_network(n_nodes, adjacency.len(), adjacency.into_iter());
+    check_edge_weight_par(&network);
     println!(
         "nodes: {:?}\nedges: {:?}",
         network.graph.node_count(),
@@ -303,6 +308,10 @@ fn run_louvain_parallel() -> std::io::Result<()> {
         }
         res.push(label);
     }
+
+    // don't let the result change
+    insta::assert_debug_snapshot!(res);
+
     // sort from greatest to least
     let hist = relabel_by_size(&mut res);
     println!("test cluster sizes {:?}", &hist);
@@ -324,4 +333,42 @@ fn run_louvain_parallel() -> std::io::Result<()> {
     // However, if you change the seed in that test you'll find that the rand index and final score vary wildly.
     assert!(1.0 - ri < 0.05);
     Ok(())
+}
+
+fn check_edge_weight_par(n: &Network) {
+    let total_edge_weight_par = n.get_total_edge_weight_par();
+
+    // Ensure parallelized edge weight matches normal codepath
+    let total_edge_weight = n.get_total_edge_weight();
+    let e = (total_edge_weight_par - total_edge_weight) / total_edge_weight;
+
+    if e.abs() > 1e-7 {
+        println!("{total_edge_weight} {total_edge_weight_par} {e}");
+    }
+    assert!(e.abs() < 1e-6);
+
+    // Ensure parallelized version is deterministic
+    let total_edge_weight_par2 = n.get_total_edge_weight_par();
+    assert_eq!(total_edge_weight_par, total_edge_weight_par2);
+}
+
+#[test]
+fn edge_weight_par() {
+    // (seed, num_clusters, nodes_per_cluster)
+    let settings = [
+        (0, 100, 50),
+        (1, 100, 50),
+        (2, 100, 250),
+        (3, 100, 250),
+        (4, 150, 1000),
+        (5, 150, 1000),
+    ];
+
+    for (seed, num_clusters, nodes_per_cluster) in settings {
+        let mut rng = ChaCha20Rng::seed_from_u64(seed);
+
+        let (g, _) = gen_sample_network(&mut rng, num_clusters, nodes_per_cluster, 10.0, 0.4);
+        let n = Network { graph: g };
+        check_edge_weight_par(&n)
+    }
 }

@@ -1,8 +1,5 @@
-use crate::{
-    betainc,
-    consts::{MACHEP, MAXLOG, MINLOG},
-    gammaln, ndtri,
-};
+use crate::consts::{MACHEP, MAXLOG, MINLOG};
+use crate::{betainc, gammaln, ndtri};
 
 enum State {
     IHalve,

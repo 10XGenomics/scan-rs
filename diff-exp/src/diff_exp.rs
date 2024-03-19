@@ -1,7 +1,5 @@
 //! Differential expression NB2 GLM
 //!
-use std::sync::Arc;
-
 use crate::dist;
 use crate::stat::Statistics;
 use anyhow::Error;
@@ -9,6 +7,7 @@ use ndarray::{arr1, Array1, Axis, Zip};
 use noisy_float::types::{n64, N64};
 use snoop::{CancelProgress, NoOpSnoop};
 use sqz::{AdaptiveMat, MatrixMap, TransposeMap};
+use std::sync::Arc;
 
 /// Default threshold for big count (p_value computation)
 pub static BIG_COUNT_DEFAULT: u64 = 900;

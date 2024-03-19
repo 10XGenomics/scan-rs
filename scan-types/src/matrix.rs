@@ -1,7 +1,6 @@
+use crate::label_class::LabelClass;
 use sprs::CsMatI;
 use sqz::AdaptiveMat;
-
-use crate::label_class::LabelClass;
 
 #[derive(Clone, Debug)]
 pub struct GenericFeatureBarcodeMatrix<M> {

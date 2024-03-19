@@ -1,5 +1,6 @@
 use crate::{AdaptiveMat, AdaptiveVec, MatrixMap};
-use ndarray::{linalg::Dot, Array2, ArrayBase, Data, Ix2};
+use ndarray::linalg::Dot;
+use ndarray::{Array2, ArrayBase, Data, Ix2};
 // use num_traits::{FromPrimitive, NumAssign};
 use std::ops::Deref;
 
@@ -98,13 +99,12 @@ where
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};
     use ndarray_rand::RandomExt;
     use rand::distributions::uniform::Uniform;
     use rand::prelude::{Rng, SeedableRng};
     use rand_pcg::Pcg64Mcg;
-
-    use crate::mat::test as mat_test;
 
     #[derive(Clone, PartialEq, Eq, Debug)]
     struct F64Map;

@@ -2,17 +2,18 @@
 #[cfg(test)]
 pub mod test {
     //use crate::test_data;
-    use crate::{dist::DistanceType, umap::Umap, utils::LabelledVector};
+    use crate::dist::DistanceType;
+    use crate::umap::Umap;
+    #[cfg(feature = "plotly")]
+    use crate::utils::plot_graph;
+    use crate::utils::LabelledVector;
     use byteorder::{BigEndian, ReadBytesExt};
     use log::info;
     use ndarray::Array2;
     use std::env;
-    use std::io::Cursor;
-    use std::io::Read;
-    use std::{fs::File, time::Instant};
-
-    #[cfg(feature = "plotly")]
-    use crate::utils::plot_graph;
+    use std::fs::File;
+    use std::io::{Cursor, Read};
+    use std::time::Instant;
 
     type Q = crate::utils::Q;
 
@@ -54,7 +55,7 @@ pub mod test {
         let umap: Umap = Umap::new(Some(distance_type), 2, 0.01, 1.0, 10, None);
 
         info!("Initialize fit..");
-        let mut state = umap.initialize_fit_parallelized(data, None);
+        let mut state = umap.initialize_fit_parallelized(data, None, 1);
         info!(
             "Initialize Fit: for {} samples took {:.3}s",
             samples,

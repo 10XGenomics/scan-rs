@@ -283,8 +283,10 @@ pub fn read_umi_counts_from_matrix(matrix: &Group) -> Result<Vec<u32>, Error> {
 
 #[cfg(test)]
 mod test {
-    use super::{compute_genes_filter, make_labelclass_from_feature_type_vector, read_csc_matrix};
-    use super::{FeatureBarcodeMatrix, MatrixType};
+    use super::{
+        compute_genes_filter, make_labelclass_from_feature_type_vector, read_csc_matrix, FeatureBarcodeMatrix,
+        MatrixType,
+    };
 
     /// Old cellranger may put out h5 files that don't have sorted indexes within each column
     #[test]

@@ -1,6 +1,5 @@
 use crate::gamma::ln_gamma;
 use cephes::{betainc, betaincinv as beta_ppf};
-
 // use cached::proc_macro::cached;
 use std::cmp::Ordering;
 

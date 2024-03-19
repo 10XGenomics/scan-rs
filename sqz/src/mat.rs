@@ -5,12 +5,15 @@ use crate::vec::{AbstractVec, AdaptiveVec};
 use anyhow::Error;
 use itertools::Itertools;
 use log::info;
-use ndarray::{linalg::Dot, Array, Array1, Array2, ArrayBase, Axis, Ix1, Ix2};
+use ndarray::linalg::Dot;
+use ndarray::{Array, Array1, Array2, ArrayBase, Axis, Ix1, Ix2};
 use num_traits::{FromPrimitive, Num, NumAssignRef, Zero};
 use rayon::prelude::*;
 use snoop::{CancelProgress, NoOpSnoop};
+use std::collections::HashSet;
+use std::marker::PhantomData;
 use std::ops::{AddAssign, Deref, Mul};
-use std::{collections::HashSet, marker::PhantomData, time::Instant};
+use std::time::Instant;
 
 /// Trait for numeric types suitable to be used as an output of AdaptiveMat.
 pub trait AdaptiveMatNum: Copy + PartialOrd + FromPrimitive + NumAssignRef + Into<f64> {}
@@ -1149,10 +1152,8 @@ pub mod test {
     use crate::TransposeMap;
     use approx::assert_abs_diff_eq;
     use ndarray::{array, s, ArrayView, Dimension};
-    use rand::{
-        distributions::Uniform,
-        prelude::{Rng, SeedableRng},
-    };
+    use rand::distributions::Uniform;
+    use rand::prelude::{Rng, SeedableRng};
     use rand_pcg::Pcg64Mcg;
 
     #[derive(Clone, Debug, PartialEq)]
@@ -1460,7 +1461,8 @@ pub mod test {
 
     #[test]
     fn test_partition_on_thresholds() {
-        use ndarray_stats::{interpolate::Midpoint, Quantile1dExt};
+        use ndarray_stats::interpolate::Midpoint;
+        use ndarray_stats::Quantile1dExt;
         use noisy_float::types::N64;
 
         for (rows, cols, sparse) in random_matrices(2000, 50) {

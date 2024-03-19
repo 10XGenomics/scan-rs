@@ -181,11 +181,9 @@ fn compute_membership_strengths(
 
 #[cfg(test)]
 mod tests {
-    use std::assert_eq;
-
-    use ndarray::{arr1, arr2};
-
     use super::*;
+    use ndarray::{arr1, arr2};
+    use std::assert_eq;
 
     #[test]
     fn fuzzy_simplicial_set_test() {

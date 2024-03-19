@@ -2,7 +2,9 @@ use ball_tree::{BallTree, Point};
 use log::info;
 use ndarray::parallel::prelude::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use ndarray::{Array2, ArrayView2, Axis};
-use num_traits::{bounds::Bounded, cast::FromPrimitive, identities::Zero};
+use num_traits::bounds::Bounded;
+use num_traits::cast::FromPrimitive;
+use num_traits::identities::Zero;
 
 #[derive(PartialEq)]
 struct Pt(Vec<f64>);

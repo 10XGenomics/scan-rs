@@ -1,4 +1,6 @@
-use crate::{consts::MAXLOG, gamma, gamma::gammaln_sign};
+use crate::consts::MAXLOG;
+use crate::gamma;
+use crate::gamma::gammaln_sign;
 
 const ASYMP_FACTOR: f64 = 1e6;
 const MAXGAM: f64 = 171.624_376_956_302_7;

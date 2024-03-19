@@ -2,9 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use ndarray::Array2;
 use rand::prelude::SeedableRng;
 use rand_pcg::Pcg64Mcg;
-
-use sqz::gen_rand;
-use sqz::prod;
+use sqz::{gen_rand, prod};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let rng = &mut Pcg64Mcg::seed_from_u64(42);

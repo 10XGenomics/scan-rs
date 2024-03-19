@@ -1,7 +1,8 @@
 use crate::dist::{DistanceFn, DistanceType, Q};
 use log::warn;
 use ndarray::{s, Array2, Axis};
-use noisy_float::{checkers::NumChecker, NoisyFloat};
+use noisy_float::checkers::NumChecker;
+use noisy_float::NoisyFloat;
 use num_traits::Bounded;
 use rayon::prelude::*;
 use std::fmt::Debug;
@@ -108,7 +109,17 @@ where
     }
 }
 
-pub fn nearest_neighbors(data: &Array2<Q>, mut k: usize, distance_type: DistanceType) -> (Array2<usize>, Array2<Q>) {
+pub fn nearest_neighbors(
+    data: &Array2<Q>,
+    mut k: usize,
+    distance_type: DistanceType,
+    num_threads: usize,
+) -> (Array2<usize>, Array2<Q>) {
+    let thread_pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(num_threads)
+        .build()
+        .unwrap();
+
     let (samples_size, _) = data.dim();
     if samples_size <= k {
         warn!("{} neighbors requested, but only {} available", k, samples_size - 1);
@@ -128,26 +139,28 @@ pub fn nearest_neighbors(data: &Array2<Q>, mut k: usize, distance_type: Distance
     let mut indices = Array2::from_elem((samples_size, k), usize::MAX);
     let mut distances = Array2::from_elem((samples_size, k), Q::INFINITY);
 
-    indices
-        .axis_iter_mut(Axis(0))
-        .into_par_iter()
-        .zip_eq(distances.axis_iter_mut(Axis(0)).into_par_iter())
-        .enumerate()
-        .for_each_init(
-            || CountBasedNeighborhood::new(k + 1),
-            |neighborhood, (cell, (mut indices, mut distances))| {
-                neighborhood.clear();
-                let query = &samples[cell];
-                let mut j = 0;
-                for (dist, idx) in vp.find_nearest_custom(query, &metric, neighborhood) {
-                    if query.idx != idx && j < k {
-                        indices[j] = idx;
-                        distances[j] = m2d(dist.raw());
-                        j += 1;
+    thread_pool.install(|| {
+        indices
+            .axis_iter_mut(Axis(0))
+            .into_par_iter()
+            .zip_eq(distances.axis_iter_mut(Axis(0)).into_par_iter())
+            .enumerate()
+            .for_each_init(
+                || CountBasedNeighborhood::new(k + 1),
+                |neighborhood, (cell, (mut indices, mut distances))| {
+                    neighborhood.clear();
+                    let query = &samples[cell];
+                    let mut j = 0;
+                    for (dist, idx) in vp.find_nearest_custom(query, &metric, neighborhood) {
+                        if query.idx != idx && j < k {
+                            indices[j] = idx;
+                            distances[j] = m2d(dist.raw());
+                            j += 1;
+                        }
                     }
-                }
-            },
-        );
+                },
+            );
+    });
 
     (indices, distances)
 }

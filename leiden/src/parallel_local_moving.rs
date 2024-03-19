@@ -23,7 +23,7 @@ impl ParallelLocalMoving {
     /// Run a louvain iteration, but update all the nodes simultaneously using only information
     /// from the previous iteration.
     pub fn iterate<C: Clustering + Clone + Send + Sync + Default>(&mut self, n: &Network, c: &mut C) -> bool {
-        let total_edge_weight = n.get_total_edge_weight();
+        let total_edge_weight = n.get_total_edge_weight_par();
 
         self.cluster_weights.zero_len(n.nodes());
         self.nodes_per_cluster.zero_len(n.nodes());
@@ -50,6 +50,8 @@ impl ParallelLocalMoving {
         let node_order = (0..n.nodes()).collect::<Vec<_>>();
 
         let chunk_size = ((n.nodes() as f64) / (rayon::current_num_threads() as f64)) as usize;
+        let chunk_size = std::cmp::max(256, chunk_size);
+
         let mut updates = vec![0usize; n.nodes()];
         node_order
             .par_chunks(chunk_size)

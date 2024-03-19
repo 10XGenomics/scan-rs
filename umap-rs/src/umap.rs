@@ -1,8 +1,5 @@
-use crate::{
-    dist::{DistanceType, Q},
-    embedding, fuzzy, knn,
-};
-use crate::{optimize, optimize_original};
+use crate::dist::{DistanceType, Q};
+use crate::{embedding, fuzzy, knn, optimize, optimize_original};
 use ndarray::Array2;
 use rand::SeedableRng;
 use rand_pcg::Pcg64Mcg;
@@ -80,6 +77,7 @@ impl Umap {
         &self,
         x: &Array2<Q>,
         seed: Option<u64>,
+        num_threads: usize,
     ) -> (Array2<f64>, usize, Vec<usize>, Vec<usize>, Vec<f64>, Pcg64Mcg) {
         let mut random = Pcg64Mcg::seed_from_u64(seed.unwrap_or(42)); //.unwrap_or_else(|| Pcg64Mcg::seed_from_u64(42));
 
@@ -87,7 +85,7 @@ impl Umap {
         let embedded_dim = self.embedded_dim;
         let n_epochs = self.get_num_epochs(x.dim().0);
 
-        let (knn_indices, knn_distances) = knn::nearest_neighbors(x, self.n_neighbors, self.distance_type);
+        let (knn_indices, knn_distances) = knn::nearest_neighbors(x, self.n_neighbors, self.distance_type, num_threads);
 
         // This part of the process very roughly accounts for 2/3 of the work (the remaining work is in the Step calls)
         let mut graph = fuzzy::fuzzy_simplicial_set(
@@ -109,8 +107,9 @@ impl Umap {
     }
 
     /// Initialize the original non-parallel UMAP algo. Used in CR 7.1/7.2 and SR
-    pub fn initialize_fit(&self, x: &Array2<Q>, seed: Option<u64>) -> optimize_original::State {
-        let (embedding, n_epochs, head, tail, epochs_per_sample, random) = self.initialize_internal(x, seed);
+    pub fn initialize_fit(&self, x: &Array2<Q>, seed: Option<u64>, num_threads: usize) -> optimize_original::State {
+        let (embedding, n_epochs, head, tail, epochs_per_sample, random) =
+            self.initialize_internal(x, seed, num_threads);
 
         optimize_original::initialize_optimization(
             self,
@@ -125,8 +124,9 @@ impl Umap {
     }
 
     /// Initialize the parallelized epoch-batched UMAP algo. Used in Xenium.
-    pub fn initialize_fit_parallelized(&self, x: &Array2<Q>, seed: Option<u64>) -> optimize::State {
-        let (embedding, n_epochs, head, tail, epochs_per_sample, _random) = self.initialize_internal(x, seed);
+    pub fn initialize_fit_parallelized(&self, x: &Array2<Q>, seed: Option<u64>, num_threads: usize) -> optimize::State {
+        let (embedding, n_epochs, head, tail, epochs_per_sample, _random) =
+            self.initialize_internal(x, seed, num_threads);
 
         // Now, initialize the optimization steps
         optimize::initialize_optimization(
@@ -157,10 +157,9 @@ impl Umap {
 
 #[cfg(test)]
 pub mod test {
+    use super::*;
     use crate::test_data;
     use insta::assert_debug_snapshot;
-
-    use super::*;
 
     #[test]
     fn step_method_2d() {
@@ -175,7 +174,7 @@ pub mod test {
 
         let data2 = Array2::from_shape_vec((samples, dim), data0).unwrap();
 
-        let mut state = umap.initialize_fit(&data2, None);
+        let mut state = umap.initialize_fit(&data2, None, 1);
         state.optimize();
 
         assert_eq!(500, state.n_epochs);

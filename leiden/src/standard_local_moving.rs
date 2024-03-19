@@ -1,5 +1,6 @@
 use crate::{Clustering, Network, ZeroVec};
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::SliceRandom;
+use rand::Rng;
 
 #[derive(Default)]
 pub(crate) struct StandardLocalMoving {

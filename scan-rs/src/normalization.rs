@@ -1,10 +1,10 @@
 use crate::stats::median_mut;
-
-use std::{f64, ops::Deref, str::FromStr};
-
 use anyhow::{bail, Error};
 use ndarray::prelude::*;
 use sqz::{AdaptiveMat, AdaptiveVec, LowRankOffset, MatrixMap, ScaleAxis, TransposeMap};
+use std::f64;
+use std::ops::Deref;
+use std::str::FromStr;
 
 /// Normalization scheme for feature-barcode UMI count matrix
 #[derive(Clone, Copy, Eq, PartialEq)]

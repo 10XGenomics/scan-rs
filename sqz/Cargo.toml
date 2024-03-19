@@ -10,14 +10,16 @@ include = ["src/**/*", "README.md"]
 anyhow = "1"
 blas-src = { path = "../blas-src", optional = true }
 itertools.workspace = true
-log ="*"
+log = "*"
 multiversion = "0.7"
 ndarray = "0.15"
 num-traits = "0.2"
 rand = "0.8"
-rayon = "*"
-sprs = { version = "0.11", default-features = false, features = ["multi_thread"] }
+rayon = "1"
 snoop = { path = "../snoop" }
+sprs = { version = "0.11", default-features = false, features = [
+    "multi_thread",
+] }
 
 [dev-dependencies]
 approx = "0.4"

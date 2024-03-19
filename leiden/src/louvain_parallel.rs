@@ -1,7 +1,6 @@
-use std::collections::HashSet;
-
 use crate::parallel_local_moving::ParallelLocalMoving;
 use crate::{Clustering, Graph, Network};
+use std::collections::HashSet;
 
 /// Perform the Louvain clustering algorithm
 pub struct ParallelLouvain {
