@@ -10,7 +10,6 @@ include = ["src/lib.rs"]
 accelerate-src = "0.3.2"
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-intel-mkl-src = { version = "0.7", default-features = false, features = [
-    "download",
+intel-mkl-src = { git = "https://github.com/10XGenomics/intel-mkl-src", branch = "master", features = [
     "mkl-static-lp64-seq",
 ] }

@@ -69,6 +69,7 @@ fn smooth_knn_distances(
     let mut result = vec![0.0; n_cells];
 
     let scale = MIN_K_DIST_SCALE;
+    let global_mean_distance = knn_distances.fold(0.0, |acc, &v| acc + v) / (n_cells as Q * k as Q);
 
     for i in 0..n_cells {
         let non_zero_dist = knn_distances
@@ -101,12 +102,8 @@ fn smooth_knn_distances(
             if result[i] < scale * mean_ith_distances {
                 result[i] = scale * mean_ith_distances;
             }
-        } else {
-            let (m, n) = knn_distances.dim();
-            let mean_distances = knn_distances.fold(0.0, |acc, &v| acc + v) / (m as Q * n as Q);
-            if result[i] < scale * mean_distances {
-                result[i] = scale * mean_distances;
-            }
+        } else if result[i] < scale * global_mean_distance {
+            result[i] = scale * global_mean_distance;
         }
     }
     (result, rho)

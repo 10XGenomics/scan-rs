@@ -190,7 +190,7 @@ mod test {
         ];
         let pv_value: Vec<(usize, f64)> = data.iter().enumerate().map(|x| (x.0, (x.1).1)).collect();
 
-        let expected: Vec<(usize, f64)> = vec![
+        let expected: Vec<(usize, f64)> = [
             0.5328125f64,
             0.781578947368421,
             0.49107142857142866,
@@ -240,7 +240,7 @@ mod test {
 
         let res = log_prob_all(count, sa, sb, mu, r);
 
-        let expected = vec![
+        let expected = [
             -9.962687402422226f64,
             -10.011477566591564,
             -10.065544787861924,

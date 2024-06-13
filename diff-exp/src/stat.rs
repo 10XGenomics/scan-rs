@@ -169,7 +169,7 @@ mod test {
 
     #[test]
     fn test_stats() {
-        let v = vec![1, 2, 4, 3, 5, 6];
+        let v = [1, 2, 4, 3, 5, 6];
         assert_approx_eq!(v.mean(), 3.5, 1e-11);
         assert_approx_eq!(v.var(0.0), 2.9166666666666665, 1e-11);
         assert_approx_eq!(v.median(), 3.5, 1e-11);

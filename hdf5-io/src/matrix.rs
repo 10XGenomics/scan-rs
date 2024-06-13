@@ -32,7 +32,7 @@ fn _read_matrix_metadata(filtered_matrix: &Path, retain_feature_like: Option<&st
         let features_map = feature_types.remove_unlike(pattern);
         feature_ids
             .into_iter()
-            .zip(feature_names.into_iter())
+            .zip(feature_names)
             .enumerate()
             .filter_map(|(i, v)| if !features_map.contains(&i) { Some(v) } else { None })
             .unzip()
@@ -323,7 +323,7 @@ mod test {
             barcodes: vec!["b1".into(), "b2".into()],
             feature_ids: vec!["f1".into(), "f2".into()],
             feature_names: vec!["f1".into(), "f2".into()],
-            feature_types: make_labelclass_from_feature_type_vector(&vec!["t1".into(), "t1".into()]).unwrap(),
+            feature_types: make_labelclass_from_feature_type_vector(&["t1".into(), "t1".into()]).unwrap(),
             matrix: MatrixType::new_csc(
                 (2, 2),
                 vec![0, 2, 4],

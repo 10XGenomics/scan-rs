@@ -100,11 +100,7 @@ impl LabelClass {
         } else {
             self.indices.len()
         };
-        set.extend(
-            self.indices
-                .splice(start as usize..end, vec![].into_iter())
-                .map(|v| v as usize),
-        );
+        set.extend(self.indices.splice(start as usize..end, vec![]).map(|v| v as usize));
     }
 }
 
@@ -118,7 +114,7 @@ where
 /*
 Code used for working with CountMatrices, moved here be shared with PyO3 and hdf5_io
  */
-pub fn make_labelclass_from_feature_type_vector(feature_types: &Vec<String>) -> Result<LabelClass, Error> {
+pub fn make_labelclass_from_feature_type_vector(feature_types: &[String]) -> Result<LabelClass, Error> {
     let mut idx = 0;
     let mut labels = vec![feature_types
         .first()

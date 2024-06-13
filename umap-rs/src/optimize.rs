@@ -178,8 +178,6 @@ fn curve(p: &Array1<f64>, x: &Array1<f64>) -> Array1<f64> {
 }
 
 fn find_ab_params(spread: Q, min_dist: Q) -> (Q, Q) {
-    let spread = spread;
-    let min_dist = min_dist;
     let p = array![2.0, 1.0];
     let x: Array1<f64> = Array1::range(0.0, 3.0 * spread, spread / 100.0);
 

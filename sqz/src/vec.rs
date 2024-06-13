@@ -1076,7 +1076,7 @@ impl AdaptiveVec {
     pub fn to_dense(&self) -> Array1<u32> {
         let len = self.len();
         let mut vec = vec![0u32; len];
-        for (_, v) in self.iter().enumerate() {
+        for v in self.iter() {
             vec[v.0] = v.1;
         }
         arr1(&vec)

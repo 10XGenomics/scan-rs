@@ -5,6 +5,7 @@ use rand::distributions::uniform::SampleUniform;
 use rand::prelude::Rng;
 use std::{fmt, iter};
 
+#[allow(unused)]
 trait Gen: Sized + fmt::Debug {
     fn gen<R: Rng + ?Sized>(rng: &mut R) -> Self;
 }

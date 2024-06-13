@@ -16,7 +16,7 @@ fn norm<T: LinalgScalar + Mul + Float>(x: &ArrayView1<T>) -> T {
     x.fold(T::zero(), |sum, v| sum + (*v) * (*v)).sqrt()
 }
 
-//// Orthogonalize a vector or matrix Y against the columns of the matrix X.
+/// Orthogonalize a vector or matrix Y against the columns of the matrix X.
 /// This function requires that the column dimension of Y is less than X and
 /// that Y and X have the same number of rows.
 fn orthog<T: LinalgScalar>(y: &ArrayView1<T>, x: &ArrayView2<T>) -> Array1<T> {

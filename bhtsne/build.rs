@@ -36,7 +36,11 @@ fn main() {
     if cfg!(target_feature = "cmpxchg16b") && !cfg!(target_os = "macos") {
         // Apple clang version 14.0.0 does not support -mcmpxchg16b.
         // Fix the error: cargo:warning=clang: error: unknown argument: '-mcmpxchg16b'
-        build.flag("-mcmpxchg16b");
+        if build.get_compiler().is_like_gnu() {
+            build.flag("-mcx16");
+        } else {
+            build.flag("-mcmpxchg16b");
+        }
     }
     if cfg!(target_feature = "fma4") {
         build.flag("-mfma4");

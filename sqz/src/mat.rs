@@ -982,7 +982,7 @@ where
         if self.storage == sprs::CSR {
             data.reserve_exact(self.data.len());
             let mut tmp = Vec::new();
-            for (_row, vec) in self.data.iter().enumerate() {
+            for vec in self.data.iter() {
                 let mut nvals = Vec::new();
                 let mut nidxs = Vec::new();
                 vec.to_vec(&mut tmp);
@@ -1021,7 +1021,7 @@ where
             }
         } else {
             let mut tmp = vec![];
-            for (_col, vec) in self.data.iter().enumerate() {
+            for vec in self.data.iter() {
                 let mut nvals = Vec::new();
                 let mut nidxs = Vec::new();
                 vec.to_vec(&mut tmp);
