@@ -137,7 +137,7 @@ impl Clustering for SimpleClustering {
         let mut new_label = 0;
         for cluster_count in counts {
             if cluster_count == 0 {
-                new_labels.push(std::usize::MAX);
+                new_labels.push(usize::MAX);
             } else {
                 new_labels.push(new_label);
                 new_label += 1;
@@ -147,7 +147,7 @@ impl Clustering for SimpleClustering {
         for i in 0..self.labels.len() {
             let old_label = self.labels[i];
             let new_label = new_labels[old_label];
-            assert!(new_label != std::usize::MAX);
+            assert!(new_label != usize::MAX);
             self.labels[i] = new_label;
         }
 

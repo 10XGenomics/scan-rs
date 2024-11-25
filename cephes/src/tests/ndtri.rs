@@ -23,7 +23,7 @@ fn test_ndtri() {
     // this corpus was generated using cargo-fuzzcheck, in an effort to exercise many codepaths
     assert_abs_diff_eq!(ndtri(0.8682156981488498), 1.1179962295510544, epsilon = EPS);
     assert!(ndtri(-1.7657446926169909).is_nan());
-    assert!(ndtri(std::f64::NAN).is_nan());
+    assert!(ndtri(f64::NAN).is_nan());
     assert_abs_diff_eq!(ndtri(2.2586453105439303e-12), -6.919973210677117, epsilon = EPS);
     assert_abs_diff_eq!(ndtri(0.1551595169687376), -1.0145528304620457, epsilon = EPS);
 }

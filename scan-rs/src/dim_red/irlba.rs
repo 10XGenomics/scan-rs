@@ -99,7 +99,7 @@ where
     let mut it = 0;
     let mut j = 0;
     let mut k = nu;
-    let mut smax = std::f64::MIN;
+    let mut smax = f64::MIN;
 
     let mut V: Array2<f64> = Array2::zeros((n, m_b));
     let mut W: Array2<f64> = Array2::zeros((m, m_b));

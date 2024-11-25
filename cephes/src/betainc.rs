@@ -6,7 +6,7 @@ const MAXGAM: f64 = 34.844_256_272_771_76;
 pub fn betainc(aa: f64, bb: f64, xx: f64) -> f64 {
     // domain errors
     if aa < 0.0 || bb < 0.0 || !(0.0..=1.0).contains(&xx) {
-        return std::f64::NAN;
+        return f64::NAN;
     }
     if xx == 0.0 {
         return 0.0;

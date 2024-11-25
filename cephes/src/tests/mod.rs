@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 mod beta;
 mod betainc;
 mod betaincinv;

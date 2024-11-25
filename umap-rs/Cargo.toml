@@ -12,7 +12,7 @@ default = []
 [dependencies]
 blas-src = { path = "../blas-src" }
 log = "*"
-ndarray = { version = "0.15", features = ["rayon", "approx"] }
+ndarray = { version = "0.15", features = ["rayon", "approx-0_5"] }
 ndarray-linalg = "0.16"
 noisy_float = "0.2"
 num-traits = "0.2"

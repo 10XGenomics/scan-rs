@@ -151,7 +151,6 @@ fn rand_index(x: &[i16], y: &[i16]) -> f64 {
 }
 
 #[test]
-#[ignore] // needs test fixture
 fn run_louvain() -> std::io::Result<()> {
     let (n_nodes, adjacency) = {
         let file = BufReader::new(GzDecoder::new(File::open("testdata/louvain/adjacency.txt.gz")?));
@@ -224,7 +223,6 @@ fn run_louvain() -> std::io::Result<()> {
 }
 
 #[test]
-#[ignore] // needs test fixture
 fn run_louvain_parallel() -> std::io::Result<()> {
     // Use to scale up dataset size. Incompatible with rand index check at the end.
     let n_repeats = 0;

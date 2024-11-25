@@ -1,6 +1,6 @@
-use anyhow::{format_err, Context, Error};
+use anyhow::{bail, format_err, Context, Error};
 use flate2::bufread::MultiGzDecoder;
-use sprs::TriMat;
+use sprs::{CsMatI, TriMat};
 use sqz::AdaptiveMat;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -45,8 +45,7 @@ pub fn load_mtx(path: impl AsRef<Path>) -> Result<AdaptiveMat, Error> {
         line.clear();
     }
 
-    mat.ok_or_else(|| format_err!("no matrix found!")).map(|t| {
-        let m = t.to_csr();
-        AdaptiveMat::from_csmat(&m)
-    })
+    let Some(matrix) = mat else { bail!("no matrix found") };
+    let csc_matrix: CsMatI<u32, usize, u32> = matrix.to_csr();
+    Ok(AdaptiveMat::from_csmat(&csc_matrix))
 }

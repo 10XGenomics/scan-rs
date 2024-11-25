@@ -11,7 +11,7 @@ pub fn beta(a: f64, b: f64) -> f64 {
         if a == ai as f64 {
             return beta_negint(ai, b);
         } else {
-            return std::f64::INFINITY;
+            return f64::INFINITY;
         }
     }
 
@@ -20,7 +20,7 @@ pub fn beta(a: f64, b: f64) -> f64 {
         if a == bi as f64 {
             return beta_negint(bi, a);
         } else {
-            return std::f64::INFINITY;
+            return f64::INFINITY;
         }
     }
 
@@ -43,14 +43,14 @@ pub fn beta(a: f64, b: f64) -> f64 {
         let y = gammaln_sign(a, &mut sgngam) + y;
         sign *= sgngam;
         if y > MAXLOG {
-            return sign as f64 * std::f64::INFINITY;
+            return sign as f64 * f64::INFINITY;
         }
         return sign as f64 * y.exp();
     }
 
     let y = gamma(y);
     if y == 0.0 {
-        return sign as f64 * std::f64::INFINITY;
+        return sign as f64 * f64::INFINITY;
     }
 
     let a = gamma(a);
@@ -70,7 +70,7 @@ fn beta_negint(a: i32, b: f64) -> f64 {
         let sign = if bi % 2 == 0 { 1i32 } else { -1 };
         sign as f64 * beta(1.0 - a as f64 - b, b)
     } else {
-        std::f64::INFINITY
+        f64::INFINITY
     }
 }
 
@@ -80,7 +80,7 @@ pub fn betaln(a: f64, b: f64) -> f64 {
         if a == ai as f64 {
             return betaln_negint(ai, b);
         } else {
-            return std::f64::INFINITY;
+            return f64::INFINITY;
         }
     }
 
@@ -89,7 +89,7 @@ pub fn betaln(a: f64, b: f64) -> f64 {
         if b == bi as f64 {
             return betaln_negint(bi, a);
         } else {
-            return std::f64::INFINITY;
+            return f64::INFINITY;
         }
     }
 
@@ -111,7 +111,7 @@ pub fn betaln(a: f64, b: f64) -> f64 {
 
     let y = gamma(y);
     if y == 0.0 {
-        return std::f64::INFINITY;
+        return f64::INFINITY;
     }
 
     let a = gamma(a);
@@ -143,6 +143,6 @@ fn betaln_negint(a: i32, b: f64) -> f64 {
     if b == bi as f64 && 1.0 - a as f64 - b > 0.0 {
         betaln(1.0 - a as f64 - b, b)
     } else {
-        std::f64::INFINITY
+        f64::INFINITY
     }
 }

@@ -59,10 +59,18 @@ where
     N: AdaptiveMatNum,
     u32: Into<N>,
 {
-    /// Create an `AdaptiveMat` from a `sprs::CsMat`
-    pub fn from_csmat<T: Clone + Into<u32>, I: sprs::SpIndex + num_traits::ToPrimitive>(
-        mat: &sprs::CsMatI<T, I>,
-    ) -> AdaptiveMatOwned<N> {
+    /// Create an `AdaptiveMat` from a `sprs::CsMatBase`
+    pub fn from_csmat<T, I, IptrStorage, IndStorage, DataStorage, Iptr>(
+        mat: &sprs::CsMatBase<T, I, IptrStorage, IndStorage, DataStorage, Iptr>,
+    ) -> AdaptiveMatOwned<N>
+    where
+        T: Clone + Into<u32>,
+        I: sprs::SpIndex + num_traits::ToPrimitive,
+        Iptr: sprs::SpIndex,
+        IptrStorage: Deref<Target = [Iptr]>,
+        IndStorage: Deref<Target = [I]>,
+        DataStorage: Deref<Target = [T]>,
+    {
         let (rows, cols) = mat.shape();
 
         let vec_len = if mat.storage() == sprs::CSC { rows } else { cols };
@@ -103,16 +111,6 @@ where
         data: D,
         matrix_map: M,
     ) -> AdaptiveMat<N, D, M> {
-        let mut counts = [0; 5];
-        for vec in data.iter() {
-            match vec {
-                AdaptiveVec::D4(_) => counts[0] += 1,
-                AdaptiveVec::D8(_) => counts[1] += 1,
-                AdaptiveVec::D16(_) => counts[2] += 1,
-                AdaptiveVec::S4(_) => counts[3] += 1,
-                AdaptiveVec::S8(_) => counts[4] += 1,
-            }
-        }
         let _n = PhantomData;
         AdaptiveMat {
             rows,

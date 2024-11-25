@@ -109,6 +109,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "approx"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "ascii"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -329,7 +338,7 @@ checksum = "d32a725bc159af97c3e629873bb9f88fb8cf8a4867175f76dc987815ea07c83b"
 name = "cephes"
 version = "0.1.0"
 dependencies = [
- "approx",
+ "approx 0.5.1",
 ]
 
 [[package]]
@@ -655,7 +664,7 @@ name = "diff-exp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "approx",
+ "approx 0.5.1",
  "assert_approx_eq",
  "cephes",
  "csv",
@@ -1306,7 +1315,8 @@ version = "0.15.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adb12d4e967ec485a5f71c6311fe28158e9d6f4bc4a447b474184d0f91a8fa32"
 dependencies = [
- "approx",
+ "approx 0.4.0",
+ "approx 0.5.1",
  "cblas-sys",
  "libc",
  "matrixmultiply",
@@ -1987,7 +1997,7 @@ name = "scan-rs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "approx",
+ "approx 0.5.1",
  "assert_approx_eq",
  "ball-tree",
  "blas-src",
@@ -2093,9 +2103,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
-version = "2.3.2"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "331bb8c3bf9b92457ab7abecf07078c13f7d270ba490103e84e8b014490cd0b0"
+checksum = "07ff71d2c147a7b57362cead5e22f772cd52f6ab31cfcd9edcd7f6aeb2a0afbe"
 dependencies = [
  "base64 0.13.1",
  "chrono",
@@ -2109,14 +2119,14 @@ dependencies = [
 
 [[package]]
 name = "serde_with_macros"
-version = "2.3.2"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "859011bddcc11f289f07f467cc1fe01c7a941daa4d8f6c40d4d1c92eb6d9319c"
+checksum = "881b6f881b17d13214e5d494c939ebab463d01264ce1811e9d4ac3a882e7695f"
 dependencies = [
- "darling 0.14.4",
+ "darling 0.20.8",
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.60",
 ]
 
 [[package]]
@@ -2193,9 +2203,10 @@ name = "sqz"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "approx",
+ "approx 0.5.1",
  "blas-src",
  "criterion",
+ "flate2",
  "itertools",
  "log",
  "multiversion",

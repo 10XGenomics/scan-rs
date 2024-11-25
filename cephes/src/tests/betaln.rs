@@ -10,7 +10,7 @@ fn test_betaln() {
     // this corpus was generated using cargo-fuzzcheck, in an effort to exercise many codepaths
     assert_abs_diff_eq!(betaln(8.564_082_021_080_995e18, 1.386_093_852_236_636_4e19), -1.491_232_238_564_055_4e19, epsilon = EPS);
     assert_abs_diff_eq!(betaln(118.08777001498584, 29.265098832087116), -74.10555769218887, epsilon = EPS);
-    assert!(betaln(std::f64::NAN, -1.7657446926169909).is_nan());
+    assert!(betaln(f64::NAN, -1.7657446926169909).is_nan());
     assert_abs_diff_eq!(betaln(5.398338681547479, 2.147_500_404_792_697_2e154), -1914.5715726240255, epsilon = EPS);
     assert_abs_diff_eq!(betaln(1.385_202_117_257_239_1e19, 4.628_649_135_717_615e18), -1.040_163_797_913_003_6e19, epsilon = EPS);
     assert_abs_diff_eq!(betaln(4.638_010_105_015_565e18, 1.386_103_029_600_184_1e19), -1.041_719_188_571_934e19, epsilon = EPS);
@@ -45,9 +45,9 @@ fn test_betaln() {
     assert_abs_diff_eq!(betaln(-474103171.8672542, -162.80146510546749), 2584.9772090911865, epsilon = EPS);
     assert_abs_diff_eq!(betaln(-1.7657446926169909, -4.287_389_614_627_973e-5), 10.057158809367412, epsilon = EPS);
     assert_abs_diff_eq!(betaln(1.385_202_117_257_239_1e19, 6.915_735_149_216_515e18), -1.321_421_779_745_361e19, epsilon = EPS);
-    assert!(betaln(-8.241712458692524, -162.80146510546749) == std::f64::INFINITY);
+    assert!(betaln(-8.241712458692524, -162.80146510546749) == f64::INFINITY);
     assert_abs_diff_eq!(betaln(-28.265098832087116, -1.7657446926169909), 5.0054203106448965, epsilon = EPS);
-    assert!(betaln(-2.322_612_297_625_279_4e253, -1.2715391977559994e-274) == std::f64::INFINITY);
+    assert!(betaln(-2.322_612_297_625_279_4e253, -1.2715391977559994e-274) == f64::INFINITY);
     assert!(betaln(1.794_278_403_330_222_6e308, 1.557_376_483_595_712e306).is_nan());
     assert_abs_diff_eq!(betaln(-29629400.14014041, -111.78355769512254), 1505.4505025744438, epsilon = EPS);
     assert_abs_diff_eq!(betaln(1.384_301_844_015_179_6e19, 4.610_982_872_180_849_7e18), -1.037_456_687_286_203_2e19, epsilon = EPS);
@@ -66,5 +66,5 @@ fn test_betaln() {
     assert_abs_diff_eq!(betaln(7.382743961174512, 2.147_500_404_792_697_2e154), -2616.242597141291, epsilon = EPS);
     assert_abs_diff_eq!(betaln(1.560_609_709_012_785e77, 8.090_929_723_178_964e81), -1.850_261_536_401_283_8e78, epsilon = EPS);
     assert_abs_diff_eq!(betaln(4.618_907_516_987_492e18, 1.383_400_306_316_712_3e19), -1.038_295_545_603_175_2e19, epsilon = EPS);
-    assert!(betaln(std::f64::NAN, std::f64::NAN).is_nan());
+    assert!(betaln(f64::NAN, f64::NAN).is_nan());
 }

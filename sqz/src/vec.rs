@@ -176,7 +176,7 @@ impl<T: Clone + Zero + PartialEq> AbstractVec for SimpleSparse<T> {
     }
 
     fn mem_size(&self) -> usize {
-        self.nnz() * (size_of::<T>() + 4)
+        self.values.capacity() * size_of::<T>() + self.indexes.capacity() * size_of::<u32>()
     }
 }
 
@@ -316,7 +316,7 @@ impl<O: Zero + PartialEq + Eq, T: AbstractVec<Output = O>> AbstractVec for Compr
     }
 
     fn mem_size(&self) -> usize {
-        self.dense_data.mem_size() + self.index_bytes.capacity() + 4 * self.block_starts.capacity()
+        self.dense_data.mem_size() + self.index_bytes.capacity() + self.block_starts.capacity() * size_of::<u32>()
     }
 }
 
@@ -332,6 +332,7 @@ impl<O: Zero, T: MemConstruct<Output = O>> MemConstruct for CompressedIndexSpars
     }
 
     fn construct(len: usize, values: &[Self::Output], indexes: Option<&[u32]>) -> Self {
+        let nnz = values.len();
         if indexes.is_none() {
             assert_eq!(
                 len,
@@ -343,8 +344,8 @@ impl<O: Zero, T: MemConstruct<Output = O>> MemConstruct for CompressedIndexSpars
 
         let total_blocks = round_up(len, 256) / 256;
 
-        let mut index_bytes = Vec::new();
-        let mut block_starts: Vec<u32> = Vec::new();
+        let mut index_bytes = Vec::with_capacity(nnz);
+        let mut block_starts: Vec<u32> = Vec::with_capacity(nnz / 256 + 1);
 
         let mut cur_block = 0;
         let mut cur_block_start = 0;
@@ -841,11 +842,12 @@ where
             );
         }
 
-        let mut data: Vec<u8> = vec![0; len / 2 + 1];
-        let mut overflow_idxs: Vec<u32> = Vec::new();
-        let mut overflow_vals: Vec<T> = Vec::new();
-
         let thresh: T = <T as NumCast>::from(15u8).unwrap();
+        let num_overflows = values.iter().filter(|v| **v >= thresh).count();
+
+        let mut data: Vec<u8> = vec![0; len / 2 + 1];
+        let mut overflow_idxs: Vec<u32> = Vec::with_capacity(num_overflows);
+        let mut overflow_vals: Vec<T> = Vec::with_capacity(num_overflows);
 
         let mut set_pos = |pos: usize, value: u8| {
             let slot = pos >> 1;
@@ -885,11 +887,148 @@ where
     }
 }
 
+/// Stores a vector of u32 values. The representation is a dense array of 3-bit byte-packed values.
+/// Values `>= 7` are encoded as `7` in the 3-bit array, with actual value stored in sparse array of u32 values.
+/// 3-bit data is stored in blocks of 21 values packed into u64 values.
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct Dense3<T> {
+    nnz: usize,
+    len: usize,
+    data: Vec<u64>,
+    fallback: SimpleSparse<T>,
+}
+
+impl<T> AbstractVec for Dense3<T>
+where
+    T: PartialOrd + Clone + ToPrimitive + Zero + PartialEq + From<u8>,
+{
+    type Output = T;
+    type Index = usize;
+
+    fn len(&self) -> usize {
+        self.len
+    }
+
+    fn get(&self, i: usize) -> T {
+        let slot = i / 21;
+        let which = i % 21;
+        let v = self.data[slot];
+
+        let down = v >> (which * 3);
+        let raw_v = (down & 0x7) as u8;
+
+        if raw_v == 7 {
+            AbstractVec::get(&self.fallback, i)
+        } else {
+            T::from(raw_v)
+        }
+    }
+
+    fn get_index(&self, i: usize) -> Option<usize> {
+        if i < self.len() {
+            Some(i)
+        } else {
+            None
+        }
+    }
+
+    fn nnz(&self) -> usize {
+        self.nnz
+    }
+
+    #[inline]
+    fn incr(&self, index: usize) -> Option<usize> {
+        let n = index + 1;
+        if n >= self.len() {
+            None
+        } else {
+            Some(n)
+        }
+    }
+
+    fn get_nonzero(&self, i: Self::Index) -> (usize, T) {
+        (i, self.get(i))
+    }
+
+    fn mem_size(&self) -> usize {
+        self.data.capacity() * size_of::<u64>() + self.fallback.mem_size()
+    }
+}
+
+impl<T> MemConstruct for Dense3<T>
+where
+    T: PartialOrd + Clone + ToPrimitive + Zero + PartialEq + From<u8> + NumCast,
+{
+    type Output = T;
+
+    fn estimate_size(len: usize, values: &[Self::Output]) -> usize {
+        let thresh: T = <T as NumCast>::from(7u8).unwrap();
+        let oversize = values.iter().filter(|x| **x >= thresh).count();
+        let fallback_size = oversize * (size_of::<u32>() + size_of::<u32>());
+        (len / 21 + 1) * 64 / 8 + fallback_size
+    }
+
+    fn construct(len: usize, values: &[Self::Output], indexes: Option<&[u32]>) -> Self {
+        let thresh: T = <T as NumCast>::from(7u8).unwrap();
+
+        if indexes.is_none() {
+            assert_eq!(
+                len,
+                values.len(),
+                "must supply a value for each position when indexes == None"
+            );
+        }
+
+        let num_overflows = values.iter().filter(|v| **v >= thresh).count();
+
+        let mut data: Vec<u64> = vec![0; len / 21 + 1];
+        let mut overflow_idxs: Vec<u32> = Vec::with_capacity(num_overflows);
+        let mut overflow_vals: Vec<T> = Vec::with_capacity(num_overflows);
+
+        let mut set_pos = |pos: usize, value: u8| {
+            let slot = pos / 21;
+            let which = pos % 21;
+
+            let orig = data[slot];
+
+            let off: u64 = !(0x7 << (which * 3));
+            let val_up = (value as u64) << (which * 3);
+
+            let res = (orig & off) | val_up;
+            data[slot] = res;
+        };
+
+        for (i, v) in values.iter().cloned().enumerate() {
+            let idx = indexes.map_or(i as u32, |idxs| idxs[i]);
+
+            if v >= thresh {
+                overflow_idxs.push(idx);
+                overflow_vals.push(v);
+                set_pos(idx as usize, 7);
+            } else {
+                set_pos(idx as usize, v.to_u8().unwrap());
+            }
+        }
+
+        let fallback = SimpleSparse::construct(len, &overflow_vals, Some(&overflow_idxs));
+
+        Dense3 {
+            nnz: values.len(),
+            len,
+            data,
+            fallback,
+        }
+    }
+}
+
 /// Sparse Vector encoding `u32` values, with length up to `u32::MAX`.
 /// Adaptively uses the most memory-efficient storage format based on
 /// the data being stored.
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum AdaptiveVec {
+    /// Dense storage of 3-bit values, with fallback to a sparse array of u32 values
+    D3(Dense3<u32>),
+
     /// Dense storage of 4-bit values, with fallback to a sparse array of u32 values
     D4(Dense4<u32>),
 
@@ -898,6 +1037,12 @@ pub enum AdaptiveVec {
 
     /// Dense storage of 16-bit values with fallback to a sparse array of u32 values
     D16(DenseW<u16, u32>),
+
+    /// Simplest sparse vector with no index compression. Suitable for extremely high sparsity
+    V(SimpleSparse<u32>),
+
+    /// Compressed-index sparse storage, with values store as 3-bit dense array with u32 fallback.
+    S3(CompressedIndexSparse<Dense3<u32>>),
 
     /// Compressed-index sparse storage, with values store as 4-bit dense array with u32 fallback.
     S4(CompressedIndexSparse<Dense4<u32>>),
@@ -913,27 +1058,39 @@ macro_rules! ada_expand {
     ($input:ident, $v:ident, $e:expr) => {{
         use $crate::vec::AdaptiveVec::*;
         match $input {
+            D3($v) => $e,
             D4($v) => $e,
             D8($v) => $e,
             D16($v) => $e,
+            S3($v) => $e,
             S4($v) => $e,
             S8($v) => $e,
+            V($v) => $e,
         }
     }};
 }
 
 enum Opts {
+    D3,
     D4,
     D8,
     D16,
+    S3,
     S4,
     S8,
+    V,
 }
 
 impl AdaptiveVec {
     fn choose_storage(len: usize, values: &[u32]) -> (Opts, usize) {
-        let mut opt = Opts::D4;
-        let mut min_size = Dense4::<u32>::estimate_size(len, values);
+        let mut opt = Opts::D3;
+        let mut min_size = Dense3::<u32>::estimate_size(len, values);
+
+        let new_sz = Dense4::<u32>::estimate_size(len, values);
+        if new_sz < min_size {
+            opt = Opts::D4;
+            min_size = new_sz;
+        }
 
         let new_sz = DenseW::<u8, u32>::estimate_size(len, values);
         if new_sz < min_size {
@@ -944,6 +1101,12 @@ impl AdaptiveVec {
         let new_sz = DenseW::<u16, u32>::estimate_size(len, values);
         if new_sz < min_size {
             opt = Opts::D16;
+            min_size = new_sz;
+        }
+
+        let new_sz = CompressedIndexSparse::<Dense3<u32>>::estimate_size(len, values);
+        if new_sz < min_size {
+            opt = Opts::S3;
             min_size = new_sz;
         }
 
@@ -958,6 +1121,11 @@ impl AdaptiveVec {
             opt = Opts::S8;
         }
 
+        let new_sz = SimpleSparse::estimate_size(len, values);
+        if new_sz < min_size {
+            opt = Opts::V;
+        }
+
         (opt, min_size)
     }
 
@@ -967,9 +1135,16 @@ impl AdaptiveVec {
         let (opt, _) = AdaptiveVec::choose_storage(len, values);
 
         match opt {
+            Opts::V => AdaptiveVec::V(SimpleSparse::construct(len, values, Some(indexes))),
+            Opts::D3 => AdaptiveVec::D3(Dense3::construct(len, values, Some(indexes))),
             Opts::D4 => AdaptiveVec::D4(Dense4::construct(len, values, Some(indexes))),
             Opts::D8 => AdaptiveVec::D8(DenseW::<u8, u32>::construct(len, values, Some(indexes))),
             Opts::D16 => AdaptiveVec::D16(DenseW::<u16, u32>::construct(len, values, Some(indexes))),
+            Opts::S3 => AdaptiveVec::S3(CompressedIndexSparse::<Dense3<u32>>::construct(
+                len,
+                values,
+                Some(indexes),
+            )),
             Opts::S4 => AdaptiveVec::S4(CompressedIndexSparse::<Dense4<u32>>::construct(
                 len,
                 values,
@@ -993,12 +1168,29 @@ impl AdaptiveVec {
         ada_expand!(self, v, v.mem_size())
     }
 
+    /// What storage mode is in use for this vector
+    pub fn storage_type(&self) -> &str {
+        match self {
+            AdaptiveVec::V(_) => "V",
+            AdaptiveVec::D3(_) => "D3",
+            AdaptiveVec::D4(_) => "D4",
+            AdaptiveVec::D8(_) => "D8",
+            AdaptiveVec::D16(_) => "D16",
+            AdaptiveVec::S3(_) => "S3",
+            AdaptiveVec::S4(_) => "S4",
+            AdaptiveVec::S8(_) => "S8",
+        }
+    }
+
     /// Iterate over the non-zero elements of the vector
     pub fn iter(&self) -> AdaptiveVecIter {
         match self {
+            AdaptiveVec::V(v) => AdaptiveVecIter::V(v.iter()),
+            AdaptiveVec::D3(v) => AdaptiveVecIter::D3(v.iter()),
             AdaptiveVec::D4(v) => AdaptiveVecIter::D4(v.iter()),
             AdaptiveVec::D8(v) => AdaptiveVecIter::D8(v.iter()),
             AdaptiveVec::D16(v) => AdaptiveVecIter::D16(v.iter()),
+            AdaptiveVec::S3(v) => AdaptiveVecIter::S3(v.iter()),
             AdaptiveVec::S4(v) => AdaptiveVecIter::S4(v.iter()),
             AdaptiveVec::S8(v) => AdaptiveVecIter::S8(v.iter()),
         }
@@ -1007,9 +1199,12 @@ impl AdaptiveVec {
     ///length
     pub fn len(&self) -> usize {
         match self {
+            AdaptiveVec::V(v) => v.len(),
+            AdaptiveVec::D3(v) => v.len(),
             AdaptiveVec::D4(v) => v.len(),
             AdaptiveVec::D8(v) => v.len(),
             AdaptiveVec::D16(v) => v.len(),
+            AdaptiveVec::S3(v) => v.len(),
             AdaptiveVec::S4(v) => v.len(),
             AdaptiveVec::S8(v) => v.len(),
         }
@@ -1018,9 +1213,12 @@ impl AdaptiveVec {
     ///empty
     pub fn is_empty(&self) -> bool {
         match self {
+            AdaptiveVec::V(v) => v.is_empty(),
+            AdaptiveVec::D3(v) => v.is_empty(),
             AdaptiveVec::D4(v) => v.is_empty(),
             AdaptiveVec::D8(v) => v.is_empty(),
             AdaptiveVec::D16(v) => v.is_empty(),
+            AdaptiveVec::S3(v) => v.is_empty(),
             AdaptiveVec::S4(v) => v.is_empty(),
             AdaptiveVec::S8(v) => v.is_empty(),
         }
@@ -1030,6 +1228,16 @@ impl AdaptiveVec {
     #[inline]
     pub fn foreach<F: FnMut(usize, u32)>(&self, mut f: F) {
         match self {
+            AdaptiveVec::V(v) => {
+                for (idx, v) in v.iter() {
+                    (f)(idx, v)
+                }
+            }
+            AdaptiveVec::D3(v) => {
+                for (idx, v) in v.iter() {
+                    (f)(idx, v)
+                }
+            }
             AdaptiveVec::D4(v) => {
                 for (idx, v) in v.iter() {
                     (f)(idx, v)
@@ -1041,6 +1249,11 @@ impl AdaptiveVec {
                 }
             }
             AdaptiveVec::D16(v) => {
+                for (idx, v) in v.iter() {
+                    (f)(idx, v)
+                }
+            }
+            AdaptiveVec::S3(v) => {
                 for (idx, v) in v.iter() {
                     (f)(idx, v)
                 }
@@ -1111,6 +1324,9 @@ impl MemConstruct for AdaptiveVec {
 #[derive(Debug)]
 pub enum AdaptiveVecIter<'a> {
     /// Dense storage of 4-bit values, with fallback to a sparse array of u32 values
+    D3(AbsIter<'a, Dense3<u32>>),
+
+    /// Dense storage of 4-bit values, with fallback to a sparse array of u32 values
     D4(AbsIter<'a, Dense4<u32>>),
 
     /// Dense storage of 8-bit values, with fallback to a sparse array of u32 values
@@ -1120,10 +1336,16 @@ pub enum AdaptiveVecIter<'a> {
     D16(AbsIter<'a, DenseW<u16, u32>>),
 
     /// Compressed-index sparse storage, with values store as 4-bit dense array with u32 fallback.
+    S3(AbsIter<'a, CompressedIndexSparse<Dense3<u32>>>),
+
+    /// Compressed-index sparse storage, with values store as 4-bit dense array with u32 fallback.
     S4(AbsIter<'a, CompressedIndexSparse<Dense4<u32>>>),
 
     /// Compressed-index sparse storage, with values store as 4-bit dense array with u32 fallback.
     S8(AbsIter<'a, CompressedIndexSparse<DenseW<u8, u32>>>),
+
+    /// Basic sparse storage
+    V(AbsIter<'a, SimpleSparse<u32>>),
 }
 
 impl<'a> Iterator for AdaptiveVecIter<'a> {
@@ -1132,11 +1354,14 @@ impl<'a> Iterator for AdaptiveVecIter<'a> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self {
+            AdaptiveVecIter::D3(v) => v.next(),
             AdaptiveVecIter::D4(v) => v.next(),
             AdaptiveVecIter::D8(v) => v.next(),
             AdaptiveVecIter::D16(v) => v.next(),
+            AdaptiveVecIter::S3(v) => v.next(),
             AdaptiveVecIter::S4(v) => v.next(),
             AdaptiveVecIter::S8(v) => v.next(),
+            AdaptiveVecIter::V(v) => v.next(),
         }
     }
 }
@@ -1265,15 +1490,18 @@ pub mod test {
     }
 
     #[test]
-    fn run_test() {
+    fn exercise_sparse_vec_types() {
+        test_sparse_many::<Dense3<u32>>();
         test_sparse_many::<Dense4<u32>>();
         test_sparse_many::<DenseW<u8, u32>>();
         test_sparse_many::<DenseW<u16, u32>>();
 
         test_sparse_many::<SimpleSparse<u32>>();
+        test_sparse_many::<CompressedIndexSparse<Dense3<u32>>>();
         test_sparse_many::<CompressedIndexSparse<Dense4<u32>>>();
         test_sparse_many::<CompressedIndexSparse<SimpleSparse<u32>>>();
     }
+
     #[test]
     fn test_dot() {
         let vec1 = AdaptiveVec::new(10, &[2, 3, 4], &[1, 2, 3]);

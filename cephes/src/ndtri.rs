@@ -70,13 +70,13 @@ const Q2: &[f64] = &[
 
 pub fn ndtri(y0: f64) -> f64 {
     if !(0.0..=1.0).contains(&y0) {
-        return std::f64::NAN;
+        return f64::NAN;
     }
     if y0 == 0.0 {
-        return std::f64::NEG_INFINITY;
+        return f64::NEG_INFINITY;
     }
     if y0 == 1.0 {
-        return std::f64::INFINITY;
+        return f64::INFINITY;
     }
     let mut code = true;
     let y = if y0 > 1.0 - EXPN2 {

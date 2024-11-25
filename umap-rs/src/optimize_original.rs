@@ -107,41 +107,36 @@ pub fn initialize_optimization(
     epochs_per_sample: Vec<Q>,
     distance_type: DistanceType,
 ) -> State {
-    let mut state = State::default();
-
     let (a, b) = find_ab_params(umap.spread, umap.min_dist);
-    state.random = random;
-    state.a = a;
-    state.b = b;
-    state.embedding = embedding;
-    state.initial_alpha = umap.learning_rate;
-    state.alpha = umap.learning_rate;
-    state.gamma = umap.repulsion_strength;
-    state.negative_sample_rate = umap.negative_sample_rate;
-    state.move_other = true;
-    state.n_epochs = n_epochs;
-    state.distance_type = distance_type;
-
-    // Set the optimization routine state
-    state.head = head;
-    state.tail = tail;
-    state.epochs_per_sample = epochs_per_sample;
-
-    // Hyperparameter
-
-    let epochs_per_sample = &state.epochs_per_sample;
-
-    state.epoch_of_next_sample = epochs_per_sample.clone();
 
     let epochs_per_negative_sample = epochs_per_sample
         .iter()
         .map(|&e| e / (umap.negative_sample_rate as Q))
         .collect::<Vec<_>>();
 
-    state.epoch_of_next_negative_sample = epochs_per_negative_sample.clone();
-    state.epochs_per_negative_sample = epochs_per_negative_sample;
+    State {
+        random,
+        a,
+        b,
+        embedding,
+        initial_alpha: umap.learning_rate,
+        alpha: umap.learning_rate,
+        gamma: umap.repulsion_strength,
+        negative_sample_rate: umap.negative_sample_rate,
+        move_other: true,
+        n_epochs,
+        distance_type,
 
-    state
+        // Set the optimization routine state
+        head,
+        tail,
+        epochs_per_sample: epochs_per_sample.clone(),
+        epoch_of_next_sample: epochs_per_sample,
+        epoch_of_next_negative_sample: epochs_per_negative_sample.clone(),
+        epochs_per_negative_sample,
+
+        current_epoch: 0,
+    }
 }
 
 /// Squared Euclidean distance

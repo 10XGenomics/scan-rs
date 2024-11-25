@@ -40,7 +40,6 @@ pub mod test {
     }
 
     #[test]
-    #[ignore] // needs test fixture
     fn completed_correlation() {
         let (data, data_raw) = setup(500);
         let distance_type = DistanceType::pearson();

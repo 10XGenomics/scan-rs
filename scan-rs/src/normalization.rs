@@ -328,7 +328,6 @@ mod test_normalization {
     use sqz::AdaptiveMatOwned;
 
     #[test]
-    #[ignore] // needs test fixture
     /// This is a 'manual' verification that the Cellranger-style matrix-preprocessing and PCA
     /// is reproduced in this crate. We take the correct singular values of the preprocessed matrix out of
     /// cellranger (using an SVD, not irlba), and make sure we get the same values here.
@@ -365,7 +364,6 @@ mod test_normalization {
     }
 
     #[test]
-    #[ignore] // needs test fixture
     fn test_binom_deviance() -> Result<(), Error> {
         let matrix = crate::mtx::load_mtx("test/pbmc4k_tiny.mtx.gz")?;
         let (matrix, _, _, _) = matrix.partition_on_thresholds(Some(3.0), None);
@@ -395,7 +393,6 @@ mod test_normalization {
     }
 
     #[test]
-    #[ignore] // needs test fixture
     fn test_binom_pearson() -> Result<(), Error> {
         let matrix = crate::mtx::load_mtx("test/pbmc4k_tiny.mtx.gz")?;
         let (matrix, _, _, _) = matrix.partition_on_thresholds(Some(3.0), None);

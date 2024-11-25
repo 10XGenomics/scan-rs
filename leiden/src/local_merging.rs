@@ -142,7 +142,7 @@ impl LocalMerging {
 
                 let mut chosen_cluster = best_cluster;
 
-                if total_transformed_qv_increment < std::f64::INFINITY {
+                if total_transformed_qv_increment < f64::INFINITY {
                     let r = total_transformed_qv_increment * rng.gen::<f64>();
                     let mut min_idx = -1;
                     let mut max_idx = (num_neighboring_clusters + 1) as isize;

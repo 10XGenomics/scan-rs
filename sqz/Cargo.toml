@@ -12,7 +12,7 @@ blas-src = { path = "../blas-src", optional = true }
 itertools.workspace = true
 log = "*"
 multiversion = "0.7"
-ndarray = "0.15"
+ndarray = { version = "0.15", features = ["approx-0_5"] }
 num-traits = "0.2"
 rand = "0.8"
 rayon = "1"
@@ -22,12 +22,13 @@ sprs = { version = "0.11", default-features = false, features = [
 ] }
 
 [dev-dependencies]
-approx = "0.4"
+approx = "0.5"
 criterion = "*"
 ndarray-rand = "0.14"
 ndarray-stats = "0.5"
 noisy_float = "0.2"
 rand_pcg = "0.3"
+flate2 = "*"
 
 [[bench]]
 name = "my_benchmark"

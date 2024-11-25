@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 use std::ops::Range;
 use std::path::Path;
 
-type MatrixType = CsMatI<u32, u32>;
+type MatrixType = CsMatI<u32, u32, u64>;
 pub static FEATURE_TYPE_GENE_EXPRESSION: &str = "Gene Expression";
 type FeatureBarcodeMatrix = GenericFeatureBarcodeMatrix<MatrixType>;
 
@@ -54,8 +54,7 @@ fn _read_matrix_metadata(filtered_matrix: &Path, retain_feature_like: Option<&st
 /// Read a feature barcode matrix with CSC orientation for xena (filtered, analysis h5 file)
 fn read_csc_matrix(filtered_matrix: impl AsRef<Path>) -> Result<FeatureBarcodeMatrix, Error> {
     let matrix = hdf5::File::open(&filtered_matrix)?.group("matrix")?;
-
-    let pointers = get_ind_between("indptr", 0, None, &matrix)?;
+    let pointers = get_ind_between_u64("indptr", 0, None, &matrix)?;
     let indices = get_ind_between("indices", 0, None, &matrix)?;
     let values = get_values_between(0, None, &matrix)?;
 
@@ -221,6 +220,17 @@ pub fn read_features_between(
 }
 
 // // Return the complete array of CSC pointers (len should be number of columns in sparse matrix + 1)
+pub fn get_ind_between_u64(name: &str, start: isize, end: Option<isize>, matrix: &Group) -> Result<Vec<u64>, Error> {
+    //let mut slice;
+    let dataset = matrix.dataset(name)?;
+    let data: Vec<u64> = match end {
+        Some(e) => dataset.read_slice_1d(s![start..e])?.to_vec(),
+        None => dataset.read_slice_1d(s![start..])?.to_vec(),
+    };
+    Ok(data)
+}
+
+// // Return the complete array of CSC pointers (len should be number of columns in sparse matrix + 1)
 pub fn get_ind_between(name: &str, start: isize, end: Option<isize>, matrix: &Group) -> Result<Vec<u32>, Error> {
     //let mut slice;
     let dataset = matrix.dataset(name)?;
@@ -230,6 +240,7 @@ pub fn get_ind_between(name: &str, start: isize, end: Option<isize>, matrix: &Gr
     };
     Ok(data)
 }
+
 // Return all nonzero matrix values for the compressed-sparse row matrix in row order.
 pub fn get_values_between(start: isize, end: Option<isize>, matrix: &Group) -> Result<Vec<u32>, Error> {
     let name = "data";
@@ -247,6 +258,10 @@ pub fn get_barcodes_between(start: isize, end: Option<isize>, matrix: &Group) ->
     const MAX_BARCODE_AND_GEM_GROUP_LEN: usize = 44 + 2;
     let name = "barcodes";
     let dataset = matrix.dataset(name)?;
+    if dataset.shape().is_empty() {
+        // No barcodes
+        return Ok(vec![]);
+    }
     let data: Vec<hdf5::types::FixedAscii<MAX_BARCODE_AND_GEM_GROUP_LEN>> = match end {
         Some(e) => dataset.read_slice_1d(s![start..e])?.to_vec(),
         None => dataset.read_slice_1d(s![start..])?.to_vec(),
@@ -287,10 +302,10 @@ mod test {
         compute_genes_filter, make_labelclass_from_feature_type_vector, read_csc_matrix, FeatureBarcodeMatrix,
         MatrixType,
     };
+    use anyhow::Result;
 
     /// Old cellranger may put out h5 files that don't have sorted indexes within each column
     #[test]
-    #[ignore] // needs test fixture
     fn test_cr3_matrix_reverse_sorted() {
         let file = "test/ER-0114-T3.h5";
         let mat = read_csc_matrix(file).unwrap();
@@ -333,5 +348,12 @@ mod test {
         };
         let remove_feature_map = compute_genes_filter(None, None, &mut mat);
         assert_eq!(remove_feature_map.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_matrix() -> Result<()> {
+        let file = "test/empty.h5";
+        let _mat = read_csc_matrix(file)?;
+        Ok(())
     }
 }

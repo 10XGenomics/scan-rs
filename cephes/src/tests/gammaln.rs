@@ -15,13 +15,13 @@ fn test_gammaln() {
     assert_abs_diff_eq!(gammaln(-1.7657446926169909), 1.0551362684952932, epsilon = EPS);
     assert_abs_diff_eq!(gammaln(-7.07024205371492), -6.00313426343079, epsilon = EPS);
     assert_abs_diff_eq!(gammaln(-3.539042595484911), -1.355879595849078, epsilon = EPS);
-    assert!(gammaln(std::f64::NAN).is_nan());
+    assert!(gammaln(f64::NAN).is_nan());
     assert_abs_diff_eq!(gammaln(5.398338681547479), 3.7950652248147976, epsilon = EPS);
     assert_abs_diff_eq!(gammaln(-474103171.8672542), -8997025330.33021, epsilon = EPS);
     assert_abs_diff_eq!(gammaln(-452.10876678681046), -2313.78732269773, epsilon = EPS);
-    assert!(gammaln(1.557_376_483_595_712e306) == std::f64::INFINITY);
+    assert!(gammaln(1.557_376_483_595_712e306) == f64::INFINITY);
     assert_abs_diff_eq!(gammaln(6.413979178980679), 5.5089525209185615, epsilon = EPS);
-    assert!(gammaln(-2.042_751_265_974_212e154) == std::f64::INFINITY);
+    assert!(gammaln(-2.042_751_265_974_212e154) == f64::INFINITY);
     assert_abs_diff_eq!(gammaln(-1.2178952235844431e-154), 354.40098017882525, epsilon = EPS);
     assert_abs_diff_eq!(gammaln(-28.265098832087116), -67.3329902136446, epsilon = EPS);
     assert_abs_diff_eq!(gammaln(12.835526832822119), 19.57284234629955, epsilon = EPS);

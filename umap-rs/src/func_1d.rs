@@ -38,7 +38,7 @@ impl<'a> Func1D<'a> {
         include_parameter: &Array1<bool>, // which parameters to evaluate
         func_values: &Array1<f64>,        // function values for given parameters
     ) -> Array2<f64> {
-        let epsilon = std::f64::EPSILON.sqrt();
+        let epsilon = f64::EPSILON.sqrt();
 
         // calculate number of parameters that are being varied
         let num_varying_params = include_parameter

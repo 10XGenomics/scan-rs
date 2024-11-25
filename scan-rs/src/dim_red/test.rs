@@ -1,4 +1,3 @@
-#![cfg(test)]
 // Various methods in here a unused but can be used for
 // manual exploration
 #![allow(dead_code)]
@@ -30,7 +29,6 @@ fn seeded_rng() -> Pcg64Mcg {
 }
 
 #[test]
-#[ignore] // needs test fixture
 fn test_mtx_to_csr() -> Result<()> {
     let mtx = "test/pbmc_1k.mtx.gz";
     let mut reader = BufReader::new(GzDecoder::new(File::open(mtx).context(mtx)?));
@@ -156,7 +154,6 @@ fn rsvd_fast_test() {
 }
 
 #[test]
-#[ignore] // needs test fixture
 fn rsvd_pbmc4k_test() {
     let a = pbmc4k_tiny();
     let rsvd = RandSvd::new();
@@ -170,7 +167,6 @@ fn bksvd_fast_test() {
 }
 
 #[test]
-#[ignore] // needs test fixture
 fn bksvd_pbmc4k_test() {
     let a = pbmc4k_tiny();
     let svd = BkSvd::new();

@@ -14,7 +14,7 @@ const SQTPI: f64 = 2.506_628_274_631_000_7;
 
 pub fn stirf(x: f64) -> f64 {
     if x >= MAXGAM {
-        return std::f64::INFINITY;
+        return f64::INFINITY;
     }
     let w = 1.0 / x;
     let w = 1.0 + w * polevl(w, STIR);
@@ -52,17 +52,17 @@ const Q: &[f64] = &[
 #[inline(always)]
 fn small(x: f64, z: f64) -> f64 {
     if x == 0.0 {
-        std::f64::NAN
+        f64::NAN
     } else {
         z / ((1.0 + 0.5772156649015329 * x) * x)
     }
 }
 
 pub fn gamma(x: f64) -> f64 {
-    if x.is_nan() || x == std::f64::INFINITY {
+    if x.is_nan() || x == f64::INFINITY {
         return x;
-    } else if x == std::f64::NEG_INFINITY {
-        return std::f64::NAN;
+    } else if x == f64::NEG_INFINITY {
+        return f64::NAN;
     }
     let q = x.abs();
 
@@ -71,7 +71,7 @@ pub fn gamma(x: f64) -> f64 {
         let z = if x < 0.0 {
             let p = q.floor();
             if p == q {
-                return std::f64::NAN;
+                return f64::NAN;
             }
             let i = p as i32;
             if i & 1 == 0 {
@@ -83,7 +83,7 @@ pub fn gamma(x: f64) -> f64 {
             }
             let z = q * (PI * z).sin();
             if z == 0.0 {
-                return sgngam as f64 * std::f64::INFINITY;
+                return sgngam as f64 * f64::INFINITY;
             }
             let z = z.abs();
             PI / (z * stirf(q))
@@ -163,7 +163,7 @@ pub(crate) fn gammaln_sign(x: f64, sgngam: &mut i32) -> f64 {
         let w = gammaln_sign(q, sgngam);
         let p = q.floor();
         if p == q {
-            return std::f64::INFINITY;
+            return f64::INFINITY;
         }
         let i = p as i32;
         if (i & 1) == 0 {
@@ -177,7 +177,7 @@ pub(crate) fn gammaln_sign(x: f64, sgngam: &mut i32) -> f64 {
         };
         let z = q * (PI * z).sin();
         if z == 0.0 {
-            return std::f64::INFINITY;
+            return f64::INFINITY;
         }
         return LOGPI - z.ln() - w;
     }
@@ -192,7 +192,7 @@ pub(crate) fn gammaln_sign(x: f64, sgngam: &mut i32) -> f64 {
         }
         while u < 2.0 {
             if u == 0.0 {
-                return std::f64::INFINITY;
+                return f64::INFINITY;
             }
             z /= u;
             p += 1.0;
@@ -213,7 +213,7 @@ pub(crate) fn gammaln_sign(x: f64, sgngam: &mut i32) -> f64 {
         return z.ln() + p;
     }
     if x > MAXLGM {
-        return (*sgngam) as f64 * std::f64::INFINITY;
+        return (*sgngam) as f64 * f64::INFINITY;
     }
     let q = (x - 0.5) * x.ln() - x + LS2PI;
     if x > 1e8 {

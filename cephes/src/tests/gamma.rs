@@ -12,12 +12,12 @@ fn test_gamma() {
     assert_abs_diff_eq!(gamma(-113.08773949558939), 3.415561605492608e-184, epsilon = EPS);
     assert_abs_diff_eq!(gamma(-2.546862844206968), -0.9071705039516926, epsilon = EPS);
     assert_abs_diff_eq!(gamma(-162.80146510546749), -7.381071768511042e-291, epsilon = EPS);
-    assert!(gamma(2.147_500_404_792_697_2e154) == std::f64::INFINITY);
+    assert!(gamma(2.147_500_404_792_697_2e154) == f64::INFINITY);
     assert_abs_diff_eq!(gamma(7.382743961174512), 1490.8192481946378, epsilon = EPS);
     assert_abs_diff_eq!(gamma(-1.7657446926169909), 2.8723665403002996, epsilon = EPS);
     assert_abs_diff_eq!(gamma(-7.07024205371492), 0.0024709952767988973, epsilon = EPS);
     assert_abs_diff_eq!(gamma(-3.539042595484911), 0.25772050483856823, epsilon = EPS);
-    assert!(gamma(std::f64::NAN).is_nan());
+    assert!(gamma(f64::NAN).is_nan());
     assert_abs_diff_eq!(gamma(14.773056397209785), 47599110938.18181, epsilon = EPS);
     assert_abs_diff_eq!(gamma(5.398338681547479), 44.48113758487423, epsilon = EPS);
     assert_abs_diff_eq!(gamma(-474103171.8672542), 0.0, epsilon = EPS);

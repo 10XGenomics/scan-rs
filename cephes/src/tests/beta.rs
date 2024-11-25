@@ -9,15 +9,15 @@ const EPS: f64 = 1e-9;
 fn test_beta() {
     // this corpus was generated using cargo-fuzzcheck, in an effort to exercise many codepaths
     assert_abs_diff_eq!(beta(1.383_400_306_316_712_3e19, 4.617_764_007_446_047e18), 0.0, epsilon = EPS);
-    assert!(beta(-1532161486053.388, -474103171.8672542) == std::f64::INFINITY);
+    assert!(beta(-1532161486053.388, -474103171.8672542) == f64::INFINITY);
     assert_abs_diff_eq!(beta(1.387_003_323_458_401e19, 6.915_735_149_216_515e18), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(4.638_010_105_015_565e18, 1.383_400_306_316_712_3e19), 0.0, epsilon = EPS);
-    assert!(beta(std::f64::NAN, -113.08773949558939).is_nan());
+    assert!(beta(f64::NAN, -113.08773949558939).is_nan());
     assert_abs_diff_eq!(beta(1.555_392_032_688_073_5e19, 2.440_645_976_483_144e18), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(-1.7657446926169909, -29629400.14014041), -30638352133959.63, epsilon = EPS);
     assert_abs_diff_eq!(beta(3.2241988673327137e-271, 1.0425232427011735e-274), 9.595_213_827_098_218e273, epsilon = EPS);
     assert_abs_diff_eq!(beta(-56.60588241278304, -113.08773949558939), -5.425_386_563_460_322e46, epsilon = EPS);
-    assert!(beta(-162.80146510546749, -8.241712458692524) == std::f64::INFINITY);
+    assert!(beta(-162.80146510546749, -8.241712458692524) == f64::INFINITY);
     assert_abs_diff_eq!(beta(-1.765744692616991, -1.7657446926169909), 31.760889721983105, epsilon = EPS);
     assert_abs_diff_eq!(beta(1.383_400_306_316_712_3e19, 4.629_000_981_586_115e18), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(1.843870169482912, 7.382743961174512), 0.021418682851062566, epsilon = EPS);
@@ -27,7 +27,7 @@ fn test_beta() {
     assert_abs_diff_eq!(beta(-1.7657446926169909, -56.60588241278304), 3630.771645117701, epsilon = EPS);
     assert_abs_diff_eq!(beta(4.737_085_585_928_223e18, 1.39601057769145e+19), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(-4.4245749290999496e-71, -8.395865644994993e-169), -1.191_062_413_672_767e168, epsilon = EPS);
-    assert!(beta(-2.359_141_922_873_785_7e-5, -2.592_645_972_592_420_4e228) == std::f64::INFINITY);
+    assert!(beta(-2.359_141_922_873_785_7e-5, -2.592_645_972_592_420_4e228) == f64::INFINITY);
     assert_abs_diff_eq!(beta(1.843870169482912, 1.843870169482912), 0.21663412690198558, epsilon = EPS);
     assert_abs_diff_eq!(beta(59.105897672459605, 43.23065543544351), 2.704269640029204e-31, epsilon = EPS);
     assert_abs_diff_eq!(beta(-0.5693835497684786, -1.7657446926169909), 7.989987464004584, epsilon = EPS);
@@ -57,12 +57,12 @@ fn test_beta() {
     assert_abs_diff_eq!(beta(4.638_010_105_015_565e18, 1.386_138_214_187_034e19), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(1.382_667_580_748_518_8e19, 4.617_764_007_446_047e18), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(1.387_003_323_458_401e19, 4.619_998_249_165_517e18), 0.0, epsilon = EPS);
-    assert!(beta(std::f64::NAN, -28.265098832087116).is_nan());
-    assert!(beta(-29629400.14014041, -29629400.14014041) == std::f64::NEG_INFINITY);
+    assert!(beta(f64::NAN, -28.265098832087116).is_nan());
+    assert!(beta(-29629400.14014041, -29629400.14014041) == f64::NEG_INFINITY);
     assert_abs_diff_eq!(beta(1.387_003_323_458_401e19, 4.616_673_275_268_028e18), 0.0, epsilon = EPS);
     assert_abs_diff_eq!(beta(-452.10876678681046, -32.980521918390856), 6.539_829_143_139_209e52, epsilon = EPS);
     assert_abs_diff_eq!(beta(-162.80146510546749, -1.7657446926169909), 39240.97754407674, epsilon = EPS);
-    assert!(beta(std::f64::NAN, std::f64::NAN).is_nan());
+    assert!(beta(f64::NAN, f64::NAN).is_nan());
     assert_abs_diff_eq!(beta(-2.359_141_922_873_785_7e-5, -28.265098832087116), -42395.087027524765, epsilon = EPS);
     assert_abs_diff_eq!(beta(-1532161486053.388, -1.7657446926169909), 4.647_539_998_934_687e21, epsilon = EPS);
 }
