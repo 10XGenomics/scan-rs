@@ -7,8 +7,8 @@ use crate::dist::{DistanceType, DistanceTypeImpl, Q};
 use crate::func_1d::Func1D;
 use crate::umap::Umap;
 use ndarray::{array, Array1, Array2};
+use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
-use rand_pcg::Pcg64Mcg;
 use rayon::prelude::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use std::collections::HashMap;
 
@@ -314,7 +314,7 @@ fn optimize_layout_euclidean_threaded(state: &mut State, thread_pool: &rayon::Th
 fn iterate_euclidean(state: &State, i: usize, update: &mut StateUpdate) {
     // each epoch + i gets a deterministic seed
     let seed = state.seed ^ ((state.current_epoch as u64) << 32 | (i as u64));
-    let mut random = Pcg64Mcg::seed_from_u64(seed);
+    let mut random = SmallRng::seed_from_u64(seed);
 
     if state.epoch_of_next_sample[i] > state.current_epoch as Q {
         return;
@@ -351,7 +351,7 @@ fn iterate_euclidean(state: &State, i: usize, update: &mut StateUpdate) {
         (state.current_epoch as Q - state.epoch_of_next_negative_sample[i]) / state.epochs_per_negative_sample[i];
 
     for _ in 0..n_neg_samples.floor() as isize {
-        let k = random.gen_range(0..state.num_points());
+        let k = random.random_range(0..state.num_points());
 
         if j == k {
             continue;
@@ -397,7 +397,7 @@ fn output_metric(
 fn iterate(state: &mut State, i: usize) {
     // each epoch + i gets a deterministic seed
     let seed = state.seed ^ ((state.current_epoch as u64) << 32 | (i as u64));
-    let mut random = Pcg64Mcg::seed_from_u64(seed);
+    let mut random = SmallRng::seed_from_u64(seed);
 
     if state.epoch_of_next_sample[i] > state.current_epoch as Q {
         return;
@@ -441,7 +441,7 @@ fn iterate(state: &mut State, i: usize) {
         (state.current_epoch as Q - state.epoch_of_next_negative_sample[i]) / state.epochs_per_negative_sample[i];
 
     for _ in 0..n_neg_samples.floor() as i32 {
-        let k = random.gen_range(0..state.embedding.shape()[0]);
+        let k = random.random_range(0..state.embedding.shape()[0]);
 
         let (dist_output, grad_dist_output) = output_metric(&state.embedding, j, k, distance_grad_fn);
 

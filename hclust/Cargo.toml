@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 itertools.workspace = true
-kodama = "0.3.0"
-ndarray = "0.15"
-num-traits = "0.2.18"
-petgraph = "0.6.3"
+kodama = "0.3"
+ndarray = "0.16"
+num-traits = "0.2"
+petgraph = ">=0.6, <1"

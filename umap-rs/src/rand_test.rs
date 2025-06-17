@@ -6,10 +6,9 @@ pub mod rand_test {
     use crate::dist::DistanceType;
     use crate::umap::Umap;
     use ndarray::{Array1, Array2};
-    use ndarray_rand::RandomExt;
+    use rand::rngs::SmallRng;
     use rand::SeedableRng;
     use rand_distr::{Distribution, Gamma, Normal, Uniform};
-    use rand_pcg::Pcg64Mcg;
     use serde::de::DeserializeOwned;
     use serde::{Deserialize, Serialize};
     use std::io::Error;
@@ -20,25 +19,22 @@ pub mod rand_test {
 
     type Q = crate::utils::Q;
 
-    fn seeded_rng(seed: u64) -> Pcg64Mcg {
-        Pcg64Mcg::seed_from_u64(seed)
+    fn seeded_rng(seed: u64) -> SmallRng {
+        SmallRng::seed_from_u64(seed)
     }
 
     fn simulated_cells(cells: usize, num_clusters: usize, sigma: f64, seed: u64) -> (Array2<Q>, Array1<usize>) {
         let mut rng = seeded_rng(seed);
         let n = 20;
-
-        let mut clusters = Vec::new();
-        for _ in 0..num_clusters {
-            let r = Gamma::new(0.4, 2.0).unwrap();
-            let a = Array1::<f64>::random_using(n, r, &mut rng);
-            clusters.push(a);
-        }
+        let r = Gamma::new(0.4, 2.0).unwrap();
+        let clusters: Vec<Array1<f64>> = std::iter::repeat_with(|| r.sample_iter(&mut rng).take(n).collect())
+            .take(num_clusters)
+            .collect();
 
         let mut mat = Array2::zeros((cells, n));
         let mut cluster_labels = Array1::zeros(cells);
 
-        let c = Uniform::new(0, clusters.len());
+        let c = Uniform::new(0, clusters.len()).unwrap();
         for i in 0..cells {
             let cluster_id = c.sample(&mut rng);
             cluster_labels[i] = cluster_id;

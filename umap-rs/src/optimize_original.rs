@@ -8,8 +8,8 @@ use crate::dist::{DistanceType, DistanceTypeImpl, Q};
 use crate::func_1d::Func1D;
 use crate::umap::Umap;
 use ndarray::{array, Array1, Array2};
-use rand::Rng;
-use rand_pcg::Pcg64Mcg;
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 
 pub struct State {
     pub move_other: bool,
@@ -35,7 +35,7 @@ pub struct State {
     pub epoch_of_next_negative_sample: Vec<Q>,
 
     distance_type: DistanceType,
-    random: Pcg64Mcg,
+    random: SmallRng,
 }
 
 impl Default for State {
@@ -58,7 +58,7 @@ impl Default for State {
             epoch_of_next_sample: Vec::new(),
             epoch_of_next_negative_sample: Vec::new(),
             epochs_per_negative_sample: Vec::new(),
-            random: Pcg64Mcg::new(42),
+            random: SmallRng::seed_from_u64(0),
         }
     }
 }
@@ -99,7 +99,7 @@ impl State {
 #[allow(clippy::too_many_arguments)]
 pub fn initialize_optimization(
     umap: &Umap,
-    random: Pcg64Mcg,
+    random: SmallRng,
     embedding: Array2<Q>,
     n_epochs: usize,
     head: Vec<usize>,
@@ -233,7 +233,7 @@ pub fn iterate_euclidean(state: &mut State, i: usize) {
         (state.current_epoch as Q - state.epoch_of_next_negative_sample[i]) / state.epochs_per_negative_sample[i];
 
     for _ in 0..n_neg_samples.floor() as isize {
-        let k = state.random.gen_range(0..state.embedding.shape()[0]);
+        let k = state.random.random_range(0..state.embedding.shape()[0]);
 
         if j == k {
             continue;
@@ -317,7 +317,7 @@ fn iterate(state: &mut State, i: usize) {
         (state.current_epoch as Q - state.epoch_of_next_negative_sample[i]) / state.epochs_per_negative_sample[i];
 
     for _ in 0..n_neg_samples.floor() as i32 {
-        let k = state.random.gen_range(0..state.embedding.shape()[0]);
+        let k = state.random.random_range(0..state.embedding.shape()[0]);
 
         let (dist_output, grad_dist_output) = output_metric(&state.embedding, j, k, distance_grad_fn);
 

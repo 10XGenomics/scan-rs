@@ -10,11 +10,11 @@ include = ["src/**/*", "README.md"]
 anyhow = "1"
 blas-src = { path = "../blas-src", optional = true }
 itertools.workspace = true
-log = "*"
-multiversion = "0.7"
-ndarray = { version = "0.15", features = ["approx-0_5"] }
+log = "0.4"
+multiversion = ">=0.7, <1"
+ndarray = "0.16"
 num-traits = "0.2"
-rand = "0.8"
+rand.workspace = true
 rayon = "1"
 snoop = { path = "../snoop" }
 sprs = { version = "0.11", default-features = false, features = [
@@ -23,12 +23,10 @@ sprs = { version = "0.11", default-features = false, features = [
 
 [dev-dependencies]
 approx = "0.5"
-criterion = "*"
-ndarray-rand = "0.14"
-ndarray-stats = "0.5"
+criterion = "0.5"
+ndarray-stats = "0.6"
 noisy_float = "0.2"
-rand_pcg = "0.3"
-flate2 = "*"
+flate2 = "1"
 
 [[bench]]
 name = "my_benchmark"

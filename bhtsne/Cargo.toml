@@ -21,7 +21,7 @@ include = [
 ]
 
 [dependencies]
-ndarray = "0.15"
+ndarray = "0.16"
 smart-default = "*"
 
 [build-dependencies]

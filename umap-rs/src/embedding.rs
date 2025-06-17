@@ -4,9 +4,8 @@ use ndarray::prelude::*;
 use ndarray::Array2;
 use ndarray_linalg::lobpcg::LobpcgResult;
 use ndarray_linalg::{self as na};
-use rand::distributions::Standard;
+use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
-use rand_pcg::Pcg64Mcg;
 use sprs::{CompressedStorage, CsMat};
 use std::time::Instant;
 
@@ -66,7 +65,7 @@ where
     }
     while n > 1 {
         n -= 1;
-        let k = random.gen_range(0..n + 1);
+        let k = random.random_range(0..n + 1);
         list.swap(k, n);
 
         other.swap(k, n);
@@ -104,8 +103,8 @@ fn spectral_layout(graph: &CsMat<Q>, embedding_dim: usize) -> Array2<Q> {
             });
     let l = &i - &(&(&d * graph) * &d);
 
-    let initial = Pcg64Mcg::seed_from_u64(423)
-        .sample_iter(Standard)
+    let initial = SmallRng::seed_from_u64(0)
+        .random_iter()
         .take(dim * k)
         .collect::<Vec<Q>>();
 

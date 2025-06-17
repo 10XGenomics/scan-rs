@@ -335,7 +335,7 @@ pub mod test {
     use log::info;
     use ndarray::array;
     use rand::prelude::SeedableRng;
-    use rand_pcg::Pcg64Mcg;
+    use rand::rngs::SmallRng;
     #[cfg(hdf5)]
     use rayon::prelude::*;
     use sqz::gen_rand::random_adaptive_mat;
@@ -348,24 +348,10 @@ pub mod test {
         let cols: usize = 10;
         let rows: usize = 7;
         let range = 10u32;
-        let mut rng = Pcg64Mcg::seed_from_u64(42);
+        let mut rng = SmallRng::seed_from_u64(0);
         let mat = random_adaptive_mat(&mut rng, rows, cols, range, None);
         let res_factor = size_factors(&mat, None, None);
-        assert_eq!(
-            array![
-                0.631578947368421f64,
-                2.0,
-                2.0,
-                0.8421052631578947,
-                1.263157894736842,
-                1.1578947368421053,
-                1.368421052631579,
-                0.0,
-                0.0,
-                0.42105263157894735
-            ],
-            res_factor
-        );
+        assert_eq!(array![0.0, 0.5, 2.0, 1.0, 3.0, 2.25, 2.25, 0.5, 0.5, 1.0], res_factor);
     }
 
     #[test]

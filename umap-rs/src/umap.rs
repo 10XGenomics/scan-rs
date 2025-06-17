@@ -1,8 +1,8 @@
 use crate::dist::{DistanceType, Q};
 use crate::{embedding, fuzzy, knn, optimize, optimize_original};
 use ndarray::Array2;
+use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use rand_pcg::Pcg64Mcg;
 pub struct ProgressReporter {
     range: f64,
     raw_reporter: fn(f64),
@@ -78,8 +78,8 @@ impl Umap {
         x: &Array2<Q>,
         seed: Option<u64>,
         num_threads: usize,
-    ) -> (Array2<f64>, usize, Vec<usize>, Vec<usize>, Vec<f64>, Pcg64Mcg) {
-        let mut random = Pcg64Mcg::seed_from_u64(seed.unwrap_or(42)); //.unwrap_or_else(|| Pcg64Mcg::seed_from_u64(42));
+    ) -> (Array2<f64>, usize, Vec<usize>, Vec<usize>, Vec<f64>, SmallRng) {
+        let mut random = SmallRng::seed_from_u64(seed.unwrap_or(0));
 
         let apply_fuzzy_combine = true;
         let embedded_dim = self.embedded_dim;

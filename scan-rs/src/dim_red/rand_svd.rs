@@ -6,10 +6,9 @@ use ndarray::linalg::Dot;
 use ndarray::{s, Array2, ArrayView2};
 use ndarray_linalg::svddc::JobSvd;
 use ndarray_linalg::{SVDDCInto, QR};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
+use rand::distr::{Distribution, Uniform};
+use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use rand_pcg::Pcg64Mcg;
 use snoop::CancelProgress;
 
 /// Settings for Randomized PCA
@@ -78,15 +77,15 @@ where
         return Err(format_err!("invalid k"));
     }
 
-    let mut rng = Pcg64Mcg::seed_from_u64(seed);
-    let unif = Uniform::new(-1.0, 1.0);
+    let mut rng = SmallRng::seed_from_u64(seed);
+    let unif = Uniform::new(-1.0, 1.0).unwrap();
 
     // FIXME: Additional cases to handle
     // - fall through to straight svd when l/k is within ~25% of m or n.
     // - handle case of n > m
 
     if m >= n {
-        let omega = Array2::random_using((n, l), unif, &mut rng);
+        let omega = Array2::from_shape_simple_fn((n, l), || unif.sample(&mut rng));
         let mut Q: Array2<f64> = A.dot(&omega).qr()?.0;
 
         for _ in 0..n_iter {
@@ -108,7 +107,7 @@ where
         Ok((U, sigma, Va))
     } else {
         // n > m
-        let omega = Array2::random_using((l, m), unif, &mut rng);
+        let omega = Array2::from_shape_simple_fn((l, m), || unif.sample(&mut rng));
         let mut Q = omega.dot(A).reversed_axes().qr()?.0;
 
         for _ in 0..n_iter {

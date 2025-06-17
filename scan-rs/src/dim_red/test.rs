@@ -12,11 +12,9 @@ use ndarray::linalg::Dot;
 use ndarray::{s, Array, Array2, ArrayView1};
 use ndarray_linalg::SVD;
 use ndarray_npy::NpzReader;
-use ndarray_rand::RandomExt;
-use rand::distributions::Distribution;
+use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use rand_distr::{Gamma, Normal, Poisson, Uniform};
-use rand_pcg::Pcg64Mcg;
+use rand_distr::{Distribution, Gamma, Normal, Poisson, Uniform};
 use serde::{Deserialize, Serialize};
 use sprs::io::read_matrix_market_from_bufread;
 use sprs::{CsMat, TriMat};
@@ -24,8 +22,8 @@ use std::f64;
 use std::fs::File;
 use std::io::BufReader;
 
-fn seeded_rng() -> Pcg64Mcg {
-    Pcg64Mcg::seed_from_u64(0)
+fn seeded_rng() -> SmallRng {
+    SmallRng::seed_from_u64(0)
 }
 
 #[test]
@@ -178,7 +176,7 @@ fn bksvd_pbmc4k_test() {
 // Therefore we leave if off the test battery.
 fn simple_rand_ex(m: usize, n: usize) -> Array2<f64> {
     let r = Normal::new(0.0f64, 1.0f64).unwrap();
-    Array2::<f64>::random_using((m, n), r, &mut seeded_rng())
+    Array2::from_shape_simple_fn((m, n), || r.sample(&mut seeded_rng()))
 }
 
 // deterministic matrix (useful for comparing w/ python)
@@ -195,12 +193,13 @@ fn simple_deterministic_ex(m: usize, n: usize) -> Array2<f64> {
 // random matrix with `fix_cols` columns set to be random linear combinations of
 // other columns.
 fn complex_ex(m: usize, n: usize, fix_cols: usize) -> Array2<f64> {
+    let mut rng = seeded_rng();
     let r = Normal::new(0.0f64, 1.0f64).unwrap();
-    let mut a: Array2<f64> = Array2::<f64>::random((m, n), r);
+    let mut a: Array2<f64> = Array2::from_shape_simple_fn((m, n), || r.sample(&mut rng));
 
     // Make some columns into linear combinations of other columns.
     for i in 0..fix_cols {
-        let mix = Array1::<f64>::random(n, r);
+        let mix = Array1::from_shape_simple_fn(n, || r.sample(&mut rng));
         let new_col = a.dot(&mix);
         a.column_mut(i).assign(&new_col);
     }
@@ -214,24 +213,6 @@ fn pbmc4k_tiny() -> Array2<f64> {
     rdr.by_index(0).unwrap()
 }
 
-/*
-    class TestPCA(tk_test.UnitTestBase):
-    def setUp(self):
-        # Make a sparse matrix with integer values between 0 and 1000
-
-        np.random.seed(0)
-        mat = np.random.random((self.nfeatures, self.nbarcodes))
-        mat[mat < proportion_empty] = 0
-        mat[mat > 0] = (mat[mat > 0] - proportion_empty) * 10000
-        mat = np.matrix(mat * 1000, dtype=int)
-        mat = np.matrix(mat, dtype=np.float64)
-        self.matrix = convert_to_countmat(mat)
-        self.zeroed_feature_rows = np.random.choice(self.matrix.features_dim, 400, replace=False)
-        new_mat = copy.deepcopy(self.matrix)
-        new_mat.m[self.zeroed_feature_rows, :] = 0
-        self.zeroed_feature_mat = new_mat
-*/
-
 pub(crate) fn cr_test_zeroed_matrix(
     nfeatures: usize,
     nbarcodes: usize,
@@ -239,9 +220,8 @@ pub(crate) fn cr_test_zeroed_matrix(
     zeroed_features: usize,
 ) -> (Array2<u32>, Array2<u32>, Vec<usize>) {
     let mut rng = seeded_rng();
-
-    let r = rand::distributions::Uniform::new(0.0, 1.0);
-    let mat = Array2::<f64>::random_using((nfeatures, nbarcodes), r, &mut rng);
+    let r = Uniform::new(0.0, 1.0).unwrap();
+    let mat = Array2::from_shape_simple_fn((nfeatures, nbarcodes), || r.sample(&mut rng));
 
     let mat = mat.map(|x| {
         if *x > proportion_empty {
@@ -303,13 +283,13 @@ fn cr_test_structured_mat(nfeatures: usize, nbarcodes: usize, _proportion_empty:
         let feats = rand::seq::index::sample(&mut rng, pop_nfeats, nfeatures).into_vec();
 
         let dist = Normal::new(0.0f64, 1.0f64).unwrap();
-        let means = 20000.0 * Array1::<f64>::random_using(pop_nfeats, dist, &mut rng);
+        let means = 20000.0 * Array1::from_shape_simple_fn(pop_nfeats, || dist.sample(&mut rng));
 
         let bcs = &rnd_order[i..i + pop];
         i += pop;
 
         for col in bcs.iter() {
-            let noise = sigma * Array1::<f64>::random_using(pop_nfeats, dist, &mut rng);
+            let noise = sigma * Array1::from_shape_simple_fn(pop_nfeats, || dist.sample(&mut rng));
             let cnts = &means + &noise;
             for (m, row) in cnts.iter().zip(feats.iter()) {
                 mat[(*row, *col)] = if *m < 0.0 { 0.0 } else { *m };
@@ -327,19 +307,18 @@ fn gene_exp_sim_real_ex(m: usize, n: usize, nc: usize) -> Array2<f64> {
     let mut clusters = Vec::new();
     for _ in 0..nc {
         let r = Normal::new(0.0f64, 10.0f64).unwrap();
-        let a = Array1::<f64>::random_using(n, r, &mut rng);
+        let a = Array1::from_shape_simple_fn(n, || r.sample(&mut rng));
         clusters.push(a);
     }
 
     let mut a: Array2<f64> = Array2::<f64>::zeros((m, n));
     let jitter = Normal::new(0.0f64, 1.0f64).unwrap();
 
-    let c = Uniform::new(0, clusters.len());
+    let c = Uniform::new(0, clusters.len()).unwrap();
     for i in 0..m {
         let cluster_id = c.sample(&mut rng);
         let row = &clusters[cluster_id];
-        let new_row = row + &Array1::<f64>::random(n, jitter);
-
+        let new_row = row + &Array1::from_shape_simple_fn(n, || jitter.sample(&mut rng));
         a.row_mut(i).assign(&new_row);
     }
 
@@ -350,16 +329,14 @@ fn gene_exp_sim_real_ex(m: usize, n: usize, nc: usize) -> Array2<f64> {
 fn gene_exp_sim_sprs_ex(m: usize, n: usize, nc: usize) -> TriMat<f64> {
     let mut rng = seeded_rng();
 
-    let mut clusters = Vec::new();
-    for _ in 0..nc {
-        let r = Gamma::new(0.4, 2.0).unwrap();
-        let a = Array1::<f64>::random_using(n, r, &mut rng);
-        clusters.push(a);
-    }
+    let r = Gamma::new(0.4, 2.0).unwrap();
+    let clusters: Vec<Array1<f64>> = std::iter::repeat_with(|| Array1::from_shape_simple_fn(n, || r.sample(&mut rng)))
+        .take(nc)
+        .collect();
 
     let mut mat = TriMat::new((m, n));
 
-    let c = Uniform::new(0, clusters.len());
+    let c = Uniform::new(0, clusters.len()).unwrap();
     for i in 0..m {
         let cluster_id = c.sample(&mut rng);
         let row = &clusters[cluster_id];

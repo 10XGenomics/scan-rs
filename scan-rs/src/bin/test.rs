@@ -2,8 +2,9 @@
 
 use ndarray::{s, Array2, ArrayView2};
 use ndarray_linalg::svd::SVD;
-use ndarray_rand::RandomExt;
-use rand_distr::Normal;
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
+use rand_distr::{Distribution, Normal};
 use scan_rs::dim_red::irlba::irlba;
 use snoop::NoOpSnoop;
 use std::f64;
@@ -50,8 +51,9 @@ fn main() {
     let n = 10;
     let nu = 8;
 
+    let mut rng = SmallRng::seed_from_u64(0);
     let r = Normal::new(0.0f64, 1.0f64).unwrap();
-    let mut a: Array2<f64> = Array2::<f64>::random((m, n), r);
+    let mut a: Array2<f64> = Array2::from_shape_simple_fn((m, n), || r.sample(&mut rng));
 
     let new_col = &a.column(0) + (4.0 * f64::EPSILON);
     a.column_mut(0).assign(&new_col);

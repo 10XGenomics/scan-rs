@@ -72,11 +72,10 @@ where
 mod tests {
     use super::*;
     use ndarray::s;
-    use ndarray_rand::RandomExt;
     use ordered_float::NotNan;
+    use rand::rngs::SmallRng;
     use rand::SeedableRng;
-    use rand_distr::Normal;
-    use rand_pcg::Pcg64Mcg;
+    use rand_distr::{Distribution, Normal};
 
     fn distance(v1: &[f64], other: &[f64]) -> NotNan<f64> {
         let mut d = 0.0;
@@ -140,12 +139,12 @@ mod tests {
 
     #[test]
     fn test_knn() {
-        let mut rng = Pcg64Mcg::seed_from_u64(0);
+        let mut rng = SmallRng::seed_from_u64(0);
 
-        for ncells in &[3, 5, 50, 100] {
-            for d in &[1, 2, 3, 5, 10, 20, 50] {
+        for ncells in [3, 5, 50, 100] {
+            for d in [1, 2, 3, 5, 10, 20, 50] {
                 let dist = Normal::new(0.0f64, 1.0f64).unwrap();
-                let v = Array2::<f64>::random_using((*ncells, *d), dist, &mut rng);
+                let v = Array2::from_shape_simple_fn((ncells, d), || dist.sample(&mut rng));
                 validate_knn(&v.view());
             }
         }

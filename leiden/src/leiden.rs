@@ -1,15 +1,15 @@
 use crate::fast_local_moving::FastLocalMoving;
 use crate::local_merging::LocalMerging;
 use crate::{Clustering, Network, ZeroVec};
+use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use rand_chacha::ChaCha20Rng;
 
 /// Perform the Leiden clustering algorithm
 pub struct Leiden {
     resolution: f64,
     randomness: f64,
 
-    rng: ChaCha20Rng,
+    rng: SmallRng,
 
     local_moving: FastLocalMoving,
     num_nodes_per_cluster_reduced_network: Vec<usize>,
@@ -24,7 +24,7 @@ impl Leiden {
         Leiden {
             resolution,
             randomness,
-            rng: ChaCha20Rng::seed_from_u64(seed),
+            rng: SmallRng::seed_from_u64(seed),
             local_moving: FastLocalMoving::new(resolution),
             num_nodes_per_cluster_reduced_network: Vec::new(),
         }

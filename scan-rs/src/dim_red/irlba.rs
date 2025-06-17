@@ -5,9 +5,8 @@ use ndarray::linalg::Dot;
 use ndarray::prelude::*;
 use ndarray::{s, Array1, Array2, LinalgScalar};
 use ndarray_linalg::SVD;
-use ndarray_rand::RandomExt;
 use num_traits::Float;
-use rand_distr::Normal;
+use rand_distr::{Distribution, Normal};
 use snoop::CancelProgress;
 use std::cmp::{max, min};
 use std::ops::Mul;
@@ -114,10 +113,10 @@ where
         let mut Vs = V.slice_mut(s![.., 0]);
 
         use rand::SeedableRng;
-        let mut rng = rand_pcg::Pcg64Mcg::seed_from_u64(0);
+        let mut rng = rand::rngs::SmallRng::seed_from_u64(0);
         let rnorm = Normal::new(0.0f64, 1.0f64).unwrap();
 
-        let mut rand = Array1::random_using(n, rnorm, &mut rng);
+        let mut rand = Array1::from_shape_simple_fn(n, || rnorm.sample(&mut rng));
         rand *= 1.0f64 / norm(&rand.view());
         Vs.assign(&rand);
     }

@@ -2,7 +2,7 @@ use ndarray::{s, Array, Array1, Array2, Axis, NdFloat, Zip};
 #[cfg(feature = "plotly")]
 use plotly::{
     color::Rgb,
-    common::{Marker, Mode, Title},
+    common::{Marker, Mode},
     Layout, Plot, Scatter,
 };
 use rand::Rng;
@@ -186,7 +186,7 @@ fn graph_plot(id: usize, x: Vec<Q>, y: Vec<Q>) -> Box<plotly::traces::Scatter<Q,
 #[cfg(feature = "plotly")]
 pub fn plot_graph(show: bool, embedding: &Array2<Q>, colors_map: &[i32]) {
     let layout = Layout::new()
-        .title(Title::new("Umap"))
+        .title("Umap")
         .x_axis(plotly::layout::Axis::new().show_grid(false).zero_line(false))
         .y_axis(plotly::layout::Axis::new().show_line(false));
     let mut plot = Plot::new();
@@ -224,7 +224,7 @@ pub fn hex_num_to_rgb(num: usize) -> [u8; 3] {
 }
 
 pub fn uniform(data: &mut [Q], a: Q, random: &mut impl Rng) {
-    data.iter_mut().for_each(|v| *v = random.gen_range(-a..a));
+    data.iter_mut().for_each(|v| *v = random.random_range(-a..a));
 }
 
 #[cfg(test)]

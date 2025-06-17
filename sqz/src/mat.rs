@@ -921,13 +921,13 @@ where
             // Centering the columns
             Axis(0) => {
                 let u = Array::ones((self.rows(), 1));
-                let v = neg_means.into_shape((1, self.cols())).unwrap();
+                let v = neg_means.into_shape_with_order((1, self.cols())).unwrap();
                 // self.values_into() because LowRankOffset requires f64
                 LowRankOffset::new(self.values_into(), u, v)
             }
             // Centering the rows
             Axis(1) => {
-                let u = neg_means.into_shape((self.rows(), 1)).unwrap();
+                let u = neg_means.into_shape_with_order((self.rows(), 1)).unwrap();
                 let v = Array::ones((1, self.cols()));
                 LowRankOffset::new(self.values_into(), u, v)
             }
@@ -1081,7 +1081,7 @@ where
         let out = self.dot(&rhs);
 
         // reshape the output to 1d
-        out.into_shape(self.rows()).unwrap()
+        out.into_shape_with_order(self.rows()).unwrap()
     }
 }
 
@@ -1139,7 +1139,7 @@ where
         let out = lhs.dot(rhs);
 
         // reshape the output to 1d
-        out.into_shape(rhs.cols()).unwrap()
+        out.into_shape_with_order(rhs.cols()).unwrap()
     }
 }
 
@@ -1150,9 +1150,9 @@ pub mod test {
     use crate::TransposeMap;
     use approx::assert_abs_diff_eq;
     use ndarray::{array, s, ArrayView, Dimension};
-    use rand::distributions::Uniform;
+    use rand::distr::Uniform;
     use rand::prelude::{Rng, SeedableRng};
-    use rand_pcg::Pcg64Mcg;
+    use rand::rngs::SmallRng;
 
     #[derive(Clone, Debug, PartialEq)]
     enum RandomMap {
@@ -1182,13 +1182,13 @@ pub mod test {
 
     impl RandomMap {
         fn gen_random(r: &mut impl Rng) -> RandomMap {
-            let which = r.gen_range(0..3);
+            let which = r.random_range(0..3);
             if which == 0 {
                 RandomMap::OffsetAndLog
             } else if which == 1 {
-                RandomMap::Scale(r.gen_range(0.0001..100.0))
+                RandomMap::Scale(r.random_range(0.0001..100.0))
             } else if which == 2 {
-                RandomMap::Ramp(r.gen_range(0.00001..0.01), r.gen_range(0.00001..0.01))
+                RandomMap::Ramp(r.random_range(0.00001..0.01), r.random_range(0.00001..0.01))
             } else {
                 unreachable!()
             }
@@ -1196,13 +1196,13 @@ pub mod test {
     }
 
     pub fn random_matrices(n: usize, step: usize) -> impl Iterator<Item = (usize, usize, AdaptiveMat)> {
-        let mut rng = Pcg64Mcg::seed_from_u64(42);
+        let mut rng = SmallRng::seed_from_u64(0);
 
         (0..n).step_by(step).map(move |i| {
-            let rows = rng.gen_range(0..i + 1) + rng.gen_range(0..i + 1);
-            let cols = rng.gen_range(0..i + 1) + rng.gen_range(0..i + 1);
+            let rows = rng.random_range(0..i + 1) + rng.random_range(0..i + 1);
+            let cols = rng.random_range(0..i + 1) + rng.random_range(0..i + 1);
 
-            let range = rng.gen_range(2..50);
+            let range = rng.random_range(2..50);
             (rows, cols, random_adaptive_mat(&mut rng, rows, cols, range, None))
         })
     }
@@ -1354,7 +1354,7 @@ pub mod test {
     /// Test matrix editing is self-consistent
     #[test]
     fn sprs_conversion_map() {
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (_, _, orig) in random_matrices(1000, 10) {
             let rand_edit = RandomMap::gen_random(rng);
@@ -1377,13 +1377,13 @@ pub mod test {
 
     #[test]
     fn test_sparse_dot_dense() {
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (_rows, cols, sparse) in random_matrices(2000, 30) {
             let sparse_as_dense = sparse.to_dense();
 
             // Generate a random dense 'query' matrix
-            let dense_cols = rng.gen_range(0..64);
+            let dense_cols = rng.random_range(0..64);
             let dense = random_dense_mat(rng, cols, dense_cols);
 
             // correct answer
@@ -1398,13 +1398,13 @@ pub mod test {
 
     #[test]
     fn test_sparse_dot_dense_1d() {
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (_rows, cols, sparse) in random_matrices(2000, 100) {
             let sparse_as_dense = sparse.to_dense();
 
             // Generate a random dense 'query' vector
-            let dense = random_dense_mat(rng, cols, 1).into_shape(cols).unwrap();
+            let dense = random_dense_mat(rng, cols, 1).into_shape_with_order(cols).unwrap();
 
             // correct answer
             let truth = sparse_as_dense.dot(&dense);
@@ -1418,13 +1418,13 @@ pub mod test {
 
     #[test]
     fn test_dense_dot_sparse() {
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (rows, _cols, sparse) in random_matrices(2000, 100) {
             let sparse_as_dense = sparse.to_dense();
 
             // Generate a random dense 'query' matrix
-            let dense_rows = rng.gen_range(0..64);
+            let dense_rows = rng.random_range(0..64);
             let dense = random_dense_mat(rng, dense_rows, rows);
 
             // correct answer
@@ -1439,13 +1439,13 @@ pub mod test {
 
     #[test]
     fn test_dense_dot_sparse_1d() {
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (rows, _cols, sparse) in random_matrices(2000, 50) {
             let sparse_as_dense = sparse.to_dense();
 
             // Generate a random dense 'query' matrix
-            let dense = random_dense_mat(rng, 1, rows).into_shape(rows).unwrap();
+            let dense = random_dense_mat(rng, 1, rows).into_shape_with_order(rows).unwrap();
 
             // correct answer
             let truth = dense.dot(&sparse_as_dense);
@@ -1535,7 +1535,7 @@ pub mod test {
 
     #[test]
     fn test_select() {
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (nrows, ncols, sparse) in random_matrices(2000, 100) {
             if nrows == 0 || ncols == 0 {
@@ -1543,13 +1543,19 @@ pub mod test {
             }
             let sparse_as_dense = sparse.to_dense();
 
-            let rows = rng.sample_iter(Uniform::new(0, nrows)).take(100).collect::<Vec<_>>();
+            let rows = rng
+                .sample_iter(Uniform::new(0, nrows).unwrap())
+                .take(100)
+                .collect::<Vec<_>>();
             let selected = sparse.select_rows(&rows).to_dense();
             for (i, &row) in rows.iter().enumerate() {
                 assert_eq!(selected.slice(s![i, ..]), sparse_as_dense.slice(s![row, ..]));
             }
 
-            let cols = rng.sample_iter(Uniform::new(0, ncols)).take(100).collect::<Vec<_>>();
+            let cols = rng
+                .sample_iter(Uniform::new(0, ncols).unwrap())
+                .take(100)
+                .collect::<Vec<_>>();
             let selected = sparse.select_cols(&cols).to_dense();
             for (j, &col) in cols.iter().enumerate() {
                 assert_eq!(selected.slice(s![.., j]), sparse_as_dense.slice(s![.., col]));

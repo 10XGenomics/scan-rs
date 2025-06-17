@@ -13,15 +13,13 @@ blas-src = { path = "../blas-src" }
 diff-exp = { path = "../diff-exp" }
 flate2 = "*"
 log = "*"
-ndarray = { version = "0.15", features = ["rayon"] }
-ndarray-linalg = "0.16"
-ndarray-rand = "0.14"
-ndarray-stats = "0.5"
+ndarray = { version = "0.16", features = ["rayon"] }
+ndarray-linalg = "0.17"
+ndarray-stats = "0.6"
 noisy_float = "0.2"
 num-traits = "0.2"
-rand = "0.8"
-rand_distr = "0.4"
-rand_pcg = "0.3"
+rand.workspace = true
+rand_distr = "0.5"
 scan-types = { path = "../scan-types" }
 serde = { version = "*", features = ["derive"], optional = true }
 snoop = { path = "../snoop" }
@@ -35,7 +33,7 @@ approx = "0.5"
 assert_approx_eq = "*"
 csv = "*"
 flate2 = "*"
-ndarray-npy = { version = "0.8", default-features = false, features = [
+ndarray-npy = { version = "0.9", default-features = false, features = [
     "npz",
     "compressed_npz",
 ] }

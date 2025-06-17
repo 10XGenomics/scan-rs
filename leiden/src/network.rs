@@ -1,8 +1,7 @@
-use rayon::prelude::{IndexedParallelIterator, ParallelIterator};
-use rayon::slice::ParallelSlice;
-
 use crate::graph::{Edges, UnGraph};
 use crate::Clustering;
+use rayon::prelude::{IndexedParallelIterator, ParallelIterator};
+use rayon::slice::ParallelSlice;
 use std::collections::HashMap;
 
 /// Undirected graph with f32 node weights and f32 edge weights. Used to represent the network being clustered.

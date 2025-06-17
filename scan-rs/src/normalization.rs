@@ -212,9 +212,12 @@ where
 
     let u = pi
         .mapv(|x| (1.0 / (1.0 - x)).ln().sqrt())
-        .into_shape((matrix.rows(), 1))
+        .into_shape_with_order((matrix.rows(), 1))
         .unwrap();
-    let v = n.mapv(|x| -(2.0 * x).sqrt()).into_shape((1, matrix.cols())).unwrap();
+    let v = n
+        .mapv(|x| -(2.0 * x).sqrt())
+        .into_shape_with_order((1, matrix.cols()))
+        .unwrap();
 
     let dev_resid_map = BinomDevMap { n, pi };
 
@@ -278,9 +281,9 @@ where
 
     let u = pi
         .mapv(|x| (x / (1.0 - x)).sqrt())
-        .into_shape((matrix.rows(), 1))
+        .into_shape_with_order((matrix.rows(), 1))
         .unwrap();
-    let v = n.mapv(|x| -x.sqrt()).into_shape((1, matrix.cols())).unwrap();
+    let v = n.mapv(|x| -x.sqrt()).into_shape_with_order((1, matrix.cols())).unwrap();
 
     let pearson_resid_map = BinomPearsonMap { n, pi };
 

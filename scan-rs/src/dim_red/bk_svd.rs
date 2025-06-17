@@ -6,10 +6,9 @@ use ndarray::linalg::Dot;
 use ndarray::{s, Array2, ArrayView2};
 use ndarray_linalg::svddc::JobSvd;
 use ndarray_linalg::{SVDDCInto, QR};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
+use rand::distr::{Distribution, Uniform};
+use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use rand_pcg::Pcg64Mcg;
 use snoop::CancelProgress;
 
 /// Based on the "Randomized Block Krylov Methods for Stronger and Faster Approximate
@@ -84,15 +83,14 @@ where
 
     let b = std::cmp::min(std::cmp::min(m, n), b);
 
-    let mut rng = Pcg64Mcg::seed_from_u64(seed);
-    let unif = Uniform::new(-1.0, 1.0);
-
+    let mut rng = SmallRng::seed_from_u64(seed);
+    let unif = Uniform::new(-1.0, 1.0).unwrap();
     // FIXME: Additional cases to handle
     // - fall through to straight svd when l/k is within ~25% of m or n.
     // - handle case of n > m
 
     if m >= n {
-        let mut B = Array2::random_using((n, b), unif, &mut rng);
+        let mut B = Array2::from_shape_simple_fn((n, b), || unif.sample(&mut rng));
         let mut K = Array2::<f64>::zeros((n, b * n_iter));
 
         for i in 0..n_iter {
@@ -120,7 +118,7 @@ where
         Ok((U, sigma, Va))
     } else {
         // n > m
-        let mut B = Array2::random_using((b, m), unif, &mut rng);
+        let mut B = Array2::from_shape_simple_fn((b, m), || unif.sample(&mut rng));
         let mut K = Array2::<f64>::zeros((b * n_iter, m));
 
         for i in 0..n_iter {

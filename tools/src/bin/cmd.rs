@@ -81,7 +81,7 @@ pub fn main() -> Result<(), Error> {
     };
 
     array_to_csv(u, out_dir.join("svd_u.csv.gz"))?;
-    let d2 = d.into_shape((num_pcs, 1))?;
+    let d2 = d.into_shape_with_order((num_pcs, 1))?;
     array_to_csv(d2, out_dir.join("svd_d.csv.gz"))?;
     array_to_csv(v, out_dir.join("svd_v.csv.gz"))?;
 

@@ -4,8 +4,8 @@ use crate::louvain_parallel::ParallelLouvain;
 use crate::objective::{cpm, par_cpm};
 use crate::{Clustering, Graph, Network, SimpleClustering};
 use flate2::read::GzDecoder;
+use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
-use rand_chacha::ChaCha20Rng;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
@@ -42,17 +42,17 @@ fn gen_sample_network(
     }
 
     for _ in 0..total_edges {
-        let in_cluster = rng.gen_bool(1.0 - mu);
+        let in_cluster = rng.random_bool(1.0 - mu);
 
         // Choose Node 1
-        let n1 = rng.gen_range(0..total_nodes);
+        let n1 = rng.random_range(0..total_nodes);
         let c1 = true_clusters.get(n1);
 
         // Choose Node 2 -- optimize the case when the node2 should be in the same cluster as node1
         let mut n2 = if in_cluster {
-            rng.gen_range(c1 * nodes_per_cluster..(c1 + 1) * nodes_per_cluster)
+            rng.random_range(c1 * nodes_per_cluster..(c1 + 1) * nodes_per_cluster)
         } else {
-            rng.gen_range(0..total_nodes)
+            rng.random_range(0..total_nodes)
         };
 
         let mut c2 = true_clusters.get(n2);
@@ -67,7 +67,7 @@ fn gen_sample_network(
                 break;
             }
 
-            n2 = rng.gen_range(0..total_nodes);
+            n2 = rng.random_range(0..total_nodes);
             c2 = cluster[n2];
         }
 
@@ -84,7 +84,7 @@ const DEFAULT_EPSILON: f64 = 1e-6;
 
 #[test]
 fn run_leiden() {
-    let mut rng = ChaCha20Rng::seed_from_u64(0);
+    let mut rng = SmallRng::seed_from_u64(0);
 
     let num_clusters = 100000 / 50;
     let nodes_per_cluster = 50;
@@ -150,6 +150,14 @@ fn rand_index(x: &[i16], y: &[i16]) -> f64 {
     (num as f64 / den as f64).min(1.0)
 }
 
+#[cfg(test)]
+fn read_expected() -> std::io::Result<Vec<i16>> {
+    BufReader::new(File::open("testdata/louvain/expected.txt")?)
+        .lines()
+        .map(|line| Ok(line?.parse().unwrap()))
+        .collect()
+}
+
 #[test]
 fn run_louvain() -> std::io::Result<()> {
     let (n_nodes, adjacency) = {
@@ -204,21 +212,13 @@ fn run_louvain() -> std::io::Result<()> {
     // sort from greatest to least
     let hist = relabel_by_size(&mut res);
     println!("test cluster sizes {:?}", &hist);
-    let expected = {
-        let file = BufReader::new(GzDecoder::new(File::open("testdata/louvain/expected.txt.gz")?));
-        let mut assn = vec![];
-        for line in file.lines() {
-            let line = line?;
-            let mut iter = line.split_ascii_whitespace().skip(1);
-            assn.push(iter.next().unwrap().parse::<i16>().unwrap());
-        }
-        let hist = relabel_by_size(&mut assn);
-        println!("expected cluster sizes {:?}", &hist);
-        assn
-    };
+    let mut expected = read_expected()?;
+    let hist = relabel_by_size(&mut expected);
+    println!("expected cluster sizes {hist:?}");
     let ri = rand_index(&res, &expected);
     println!("rand index: {ri}");
-    assert!(1.0 - ri < 1e-2);
+    assert_eq!(res, expected);
+    assert_eq!(ri, 1.0);
     Ok(())
 }
 
@@ -313,23 +313,14 @@ fn run_louvain_parallel() -> std::io::Result<()> {
     // sort from greatest to least
     let hist = relabel_by_size(&mut res);
     println!("test cluster sizes {:?}", &hist);
-    let expected = {
-        let file = BufReader::new(GzDecoder::new(File::open("testdata/louvain/expected.txt.gz")?));
-        let mut assn = vec![];
-        for line in file.lines() {
-            let line = line?;
-            let mut iter = line.split_ascii_whitespace().skip(1);
-            assn.push(iter.next().unwrap().parse::<i16>().unwrap());
-        }
-        let hist = relabel_by_size(&mut assn);
-        println!("expected cluster sizes {:?}", &hist);
-        assn
-    };
+    let mut expected = read_expected()?;
+    let hist = relabel_by_size(&mut expected);
+    println!("expected cluster sizes {hist:?}");
     let ri = rand_index(&res, &expected);
     println!("rand index: {ri}");
     // Relaxed relative to the serial-louvain test above.
     // However, if you change the seed in that test you'll find that the rand index and final score vary wildly.
-    assert!(1.0 - ri < 0.05);
+    assert!(ri > 0.969);
     Ok(())
 }
 
@@ -363,7 +354,7 @@ fn edge_weight_par() {
     ];
 
     for (seed, num_clusters, nodes_per_cluster) in settings {
-        let mut rng = ChaCha20Rng::seed_from_u64(seed);
+        let mut rng = SmallRng::seed_from_u64(seed);
 
         let (g, _) = gen_sample_network(&mut rng, num_clusters, nodes_per_cluster, 10.0, 0.4);
         let n = Network { graph: g };

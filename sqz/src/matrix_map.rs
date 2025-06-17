@@ -332,9 +332,9 @@ pub mod test {
     use super::*;
     use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};
-    use rand::distributions::Uniform;
+    use rand::distr::Uniform;
     use rand::prelude::{SeedableRng, *};
-    use rand_pcg::Pcg64Mcg;
+    use rand::rngs::SmallRng;
 
     // stolen from ndarray - not currently exported.
     fn assert_close<D>(a: ArrayView<f64, D>, b: ArrayView<f64, D>)
@@ -451,7 +451,7 @@ pub mod test {
     fn test_combined_matrix_maps() {
         // generate test matrices
         let mats = mat_test::random_matrices(1000, 100);
-        let rng = &mut Pcg64Mcg::seed_from_u64(42);
+        let rng = &mut SmallRng::seed_from_u64(0);
 
         for (_rows, _cols, orig) in mats {
             println!("{orig:?}");
@@ -485,7 +485,7 @@ pub mod test {
 
             // compose with row scaling
             println!("compose with row scaling");
-            let unif_iter = rng.sample_iter(Uniform::new(0_f64, 1_f64));
+            let unif_iter = rng.sample_iter(Uniform::new(0_f64, 1_f64).unwrap());
             let row_scaling = Array1::from_iter(unif_iter.take(orig.shape()[0]));
 
             let scale_rows = ScaleAxis::new(Axis(0), row_scaling.clone());
@@ -505,7 +505,7 @@ pub mod test {
 
             // compose with column scaling
             println!("compose with column scaling");
-            let unif_iter = rng.sample_iter(Uniform::new(0_f64, 1_f64));
+            let unif_iter = rng.sample_iter(Uniform::new(0_f64, 1_f64).unwrap());
             let col_scaling = Array1::from_iter(unif_iter.take(orig.shape()[1]));
 
             let scale_columns = ScaleAxis::new(Axis(1), col_scaling.clone());

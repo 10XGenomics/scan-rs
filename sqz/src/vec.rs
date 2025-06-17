@@ -1371,7 +1371,7 @@ pub mod test {
     use super::*;
     use crate::gen_rand::gen_vec_bounded;
     use rand::prelude::{Rng, SeedableRng};
-    use rand_pcg::Pcg64Mcg;
+    use rand::rngs::SmallRng;
     use std::fmt::Debug;
     use std::ops::Range;
 
@@ -1417,7 +1417,7 @@ pub mod test {
 
         // Iterate over some ranges & make sure they're valid
         for _ in 0..10 {
-            let range = gen_range(rng, len);
+            let range = random_range(rng, len);
             let sparse_range = convert_range(range.clone(), indexes);
 
             let values = &values[sparse_range.clone()];
@@ -1464,9 +1464,9 @@ pub mod test {
         s..e
     }
 
-    pub fn gen_range(rng: &mut impl Rng, len: usize) -> Range<usize> {
-        let start: usize = rng.gen_range(0..len);
-        let end: usize = rng.gen_range(start..len);
+    pub fn random_range(rng: &mut impl Rng, len: usize) -> Range<usize> {
+        let start: usize = rng.random_range(0..len);
+        let end: usize = rng.random_range(start..len);
         start..end
     }
 
@@ -1474,11 +1474,11 @@ pub mod test {
     where
         T::Index: Debug,
     {
-        let mut rng = Pcg64Mcg::seed_from_u64(42);
+        let mut rng = SmallRng::seed_from_u64(0);
 
         for i in (0..500).step_by(8) {
-            let vec_len: usize = rng.gen_range(0..100000);
-            let nnz: usize = if vec_len == 0 { 0 } else { rng.gen_range(0..vec_len) };
+            let vec_len: usize = rng.random_range(0..100000);
+            let nnz: usize = if vec_len == 0 { 0 } else { rng.random_range(0..vec_len) };
             let mut indexes: Vec<u32> = gen_vec_bounded(&mut rng, nnz, vec_len as u32);
             indexes.sort_unstable();
             indexes.dedup();
