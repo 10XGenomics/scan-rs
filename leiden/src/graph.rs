@@ -115,8 +115,8 @@ where
 }
 
 fn edge_refs_mapper<W, NodeIx>(
-    (src, edges): (Index<NodeIx>, &Vec<DiEdge<W, NodeIx>>),
-) -> Zip<Repeat<Index<NodeIx>>, Iter<DiEdge<W, NodeIx>>>
+    (src, edges): (Index<NodeIx>, &'_ Vec<DiEdge<W, NodeIx>>),
+) -> Zip<Repeat<Index<NodeIx>>, Iter<'_, DiEdge<W, NodeIx>>>
 where
     W: Clone,
     NodeIx: IndexTrait,
@@ -238,7 +238,7 @@ where
         self.node_weights.get_mut(ix)
     }
 
-    pub fn edges(&self, source: Index<NodeIx>) -> Edges<EdgeW, NodeIx> {
+    pub fn edges(&'_ self, source: Index<NodeIx>) -> Edges<'_, EdgeW, NodeIx> {
         Edges {
             source,
             iter: self.edges[source.0.as_()].iter(),
@@ -261,7 +261,7 @@ where
         }
     }
 
-    pub fn edge_references(&self) -> EdgeReferences<EdgeW, NodeIx> {
+    pub fn edge_references(&'_ self) -> EdgeReferences<'_, EdgeW, NodeIx> {
         let iter = self
             .node_indices()
             .zip(self.edges.iter())

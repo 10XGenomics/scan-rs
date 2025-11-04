@@ -18,7 +18,7 @@ pub struct NeighborAndWeightIter<'a> {
     home_node: usize,
 }
 
-impl<'a> Iterator for NeighborAndWeightIter<'a> {
+impl Iterator for NeighborAndWeightIter<'_> {
     type Item = (usize, f64);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -57,12 +57,12 @@ impl Network {
     }
 
     /// Iterate over edges connected to `node`
-    fn edges(&self, node: usize) -> Edges<f32, u32> {
+    fn edges(&'_ self, node: usize) -> Edges<'_, f32, u32> {
         self.graph.edges((node as u32).into())
     }
 
     /// Iterator over pairs of (adjacent node id, edge_weight) for all neighbors of `node`.
-    pub fn neighbors(&self, node: usize) -> NeighborAndWeightIter {
+    pub fn neighbors(&'_ self, node: usize) -> NeighborAndWeightIter<'_> {
         NeighborAndWeightIter {
             edge_iter: self.edges(node),
             home_node: node,

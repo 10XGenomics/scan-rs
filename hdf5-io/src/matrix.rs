@@ -1,4 +1,5 @@
 use anyhow::{format_err, Error};
+use hdf5::types::FixedAscii;
 use hdf5::Group;
 use ndarray::s;
 use rayon::prelude::*;
@@ -41,14 +42,14 @@ fn _read_matrix_metadata(filtered_matrix: &Path, retain_feature_like: Option<&st
     };
 
     let nnz = matrix.dataset("data")?.size();
-    return Ok(MatrixMetadata {
+    Ok(MatrixMetadata {
         name: filtered_matrix.to_string_lossy().to_string(),
         barcodes,
         feature_ids,
         feature_names,
         feature_types,
         nnz,
-    });
+    })
 }
 
 /// Read a feature barcode matrix with CSC orientation for xena (filtered, analysis h5 file)
@@ -210,7 +211,7 @@ pub fn read_features_between(
     matrix: &Group,
 ) -> Result<Vec<String>, Error> {
     let dataset = matrix.group("features")?.dataset(name)?;
-    let data: Vec<hdf5::types::FixedAscii<256>> = match end {
+    let data: Vec<FixedAscii<256>> = match end {
         Some(e) => dataset.read_slice_1d(s![start..e])?.to_vec(),
         None => dataset.read_slice_1d(s![start..])?.to_vec(),
     };
@@ -262,7 +263,7 @@ pub fn get_barcodes_between(start: isize, end: Option<isize>, matrix: &Group) ->
         // No barcodes
         return Ok(vec![]);
     }
-    let data: Vec<hdf5::types::FixedAscii<MAX_BARCODE_AND_GEM_GROUP_LEN>> = match end {
+    let data: Vec<FixedAscii<MAX_BARCODE_AND_GEM_GROUP_LEN>> = match end {
         Some(e) => dataset.read_slice_1d(s![start..e])?.to_vec(),
         None => dataset.read_slice_1d(s![start..])?.to_vec(),
     };

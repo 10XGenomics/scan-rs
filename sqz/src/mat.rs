@@ -210,12 +210,12 @@ where
     }
 
     /// Make a view of the matrix
-    pub fn view(&self) -> AdaptiveMatView<N, M> {
+    pub fn view(&'_ self) -> AdaptiveMatView<'_, N, M> {
         AdaptiveMat::new_with_map(self.rows, self.cols, self.storage, &self.data, self.matrix_map.clone())
     }
 
     /// View of the underlying sparse matrix
-    pub fn view_base_mat(&self) -> AdaptiveMatView<u32> {
+    pub fn view_base_mat(&'_ self) -> AdaptiveMatView<'_, u32> {
         self.view().set_map(MatrixIntoMap::new())
     }
 
@@ -230,7 +230,7 @@ where
     }
 
     /// View of the transposed matrix
-    pub fn t(&self) -> AdaptiveMatView<N, M::T> {
+    pub fn t(&'_ self) -> AdaptiveMatView<'_, N, M::T> {
         AdaptiveMat::new_with_map(
             self.cols,
             self.rows,
@@ -639,8 +639,7 @@ where
                 Some(factors) => self
                     .data
                     .iter()
-                    .enumerate()
-                    .map(|(_, vec)| {
+                    .map(|vec| {
                         (
                             vec.iter()
                                 .fold(0f64, |acc, (col, v)| (acc + (v as f64) * _cols_a[col]) / factors[col]),
@@ -1143,6 +1142,7 @@ where
     }
 }
 
+/// Test sqz::mat
 #[cfg(test)]
 pub mod test {
     use super::*;
@@ -1195,6 +1195,7 @@ pub mod test {
         }
     }
 
+    /// Generate a random matrix.
     pub fn random_matrices(n: usize, step: usize) -> impl Iterator<Item = (usize, usize, AdaptiveMat)> {
         let mut rng = SmallRng::seed_from_u64(0);
 

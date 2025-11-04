@@ -52,7 +52,7 @@ pub trait DataMat {
     fn shape(&self) -> [usize; 2];
 }
 
-impl<'a> DataMat for ArrayView2<'a, f64> {
+impl DataMat for ArrayView2<'_, f64> {
     fn shape(&self) -> [usize; 2] {
         [self.shape()[0], self.shape()[1]]
     }

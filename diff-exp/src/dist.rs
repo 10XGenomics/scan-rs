@@ -37,7 +37,7 @@ pub fn adjusted_pvalue_bh(pvalue: &[(usize, f64)]) -> Vec<(usize, f64)> {
 
     // compute q = np.minimum(1, np.minimum.accumulate(scale * p[descending])
     let len = arr.len() as f64;
-    let mut min = std::f64::MAX;
+    let mut min = f64::MAX;
     for (idx, (_, ref mut val)) in arr.iter_mut().enumerate() {
         *val *= len / (len - idx as f64);
         if *val < min {
@@ -72,8 +72,8 @@ pub fn nb_exact_test(x_a: u64, x_b: u64, size_factor_a: f64, size_factor_b: f64,
     // to avoid several iterations or copies of this, we're going to fold two log_sum_exp together:
     // - first collect the maximum value
     // - then compute the log_sum_exp
-    let mut max_all = std::f64::NEG_INFINITY;
-    let mut max_ext = std::f64::NEG_INFINITY;
+    let mut max_all = f64::NEG_INFINITY;
+    let mut max_ext = f64::NEG_INFINITY;
     for &x in &log_p_all {
         if x <= log_p_obs {
             max_ext = max_ext.max(x);
@@ -140,16 +140,53 @@ pub fn nb_asymptotic_test(
 fn log_prob_all(count: u64, sa: f64, sb: f64, mu: f64, r: f64) -> Vec<f64> {
     let mut total = Vec::<f64>::with_capacity(count as usize + 1);
     let x = count as f64;
-    let mut j: f64 = x;
+    let mut j: f64 = x - 1f64;
 
     // additional term
     let add_total = x * (mu / (r + mu)).ln() + (sa + sb) * (r / (r + mu)).ln() - ln_gamma(sa * r) - ln_gamma(sb * r);
 
+    // This function suffers from a pathology where for large count we calculate A LOT of ln_gamma functions
+    // see https://github.com/10XDev/scan-rs/pull/254
+    // However, we are walking in integer loops here so can use the relationship that
+    // ln_gamma(x+1) = ln_gamma(x) + ln(x) to avoid doing expensive lngamma calculations recurrently.
+    // as well as the fact that we're calculating ln_gamma for 0..count and count..0, so can just
+    // calculate the value for (count+1) once and add it at the start/end of the array
+
+    // Initial computation inside loop before this change was an easier to read version:
+    // Note with this code the current `j` was equal to `j+1` but I changed it above.
+    //  for idx in 0..=count {
+    //     let a_x = idx as f64;
+    //     let t = ln_gamma(sa * r + a_x) + ln_gamma(sb * r + j) - (ln_gamma(a_x + 1f64) + ln_gamma(j + 1f64));
+    //     total.push(t + add_total);
+    //     j -= 1f64;
+    //  }
+
+    // --- Precompute initial values for idx = 0, j = count ---
+    let mut ln_a = ln_gamma(sa * r); // Γ(sa*r)
+    let mut ln_b = ln_gamma(sb * r + x); // Γ(sb*r + count)
     for idx in 0..=count {
-        let a_x = idx as f64;
-        let t = ln_gamma(sa * r + a_x) + ln_gamma(sb * r + j) - (ln_gamma(a_x + 1f64) + ln_gamma(j + 1f64));
-        total.push(t + add_total);
+        //let t = ln_gamma(sa * r + a_x) + ln_gamma(sb * r + j - 1) + add_total;
+        let t = ln_a + ln_b + add_total;
+        total.push(t);
+        let idxf = idx as f64;
+
+        // prepare for next iteration
+        // Note technically we don't need to do this when idx==count but I wanted to avoid an if statement here
+        // as (untested) it might slow pipelining due to branching that could be slower than just taking 2 extra logs
+        //at the end of the loop
+
+        //if idx < count {
+        ln_a += (sa * r + idxf).ln(); // ln Γ(sa*r + idx + 1)
+        ln_b -= (sb * r + j).ln(); // stepping downward
         j -= 1f64;
+        //}
+    }
+    // Now subtract the terms for lngamma(a_x+1) and lngamma(count - a_x + 1), doing the start..end and end..start iteration with one pass
+    let mut ln_index = 0.0; // ln Γ(1) = 0
+    for idx in 0..=count {
+        total[idx as usize] -= ln_index;
+        total[(count - idx) as usize] -= ln_index;
+        ln_index += (idx as f64 + 1.0).ln();
     }
     total
 }

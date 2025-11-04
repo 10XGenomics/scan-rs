@@ -96,7 +96,7 @@ where
 }
 
 #[cfg(test)]
-pub mod test {
+mod test {
     use super::*;
     use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};

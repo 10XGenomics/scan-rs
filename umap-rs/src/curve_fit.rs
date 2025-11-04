@@ -56,7 +56,7 @@ pub struct Minimizer<'a> {
     pub lambda_down_fac: f64,
 }
 
-impl<'a> Minimizer<'a> {
+impl Minimizer<'_> {
     /// Initializes the LM-algorithm. Performs first calculation of model & gradient
     pub fn init<'b>(
         model: &'b Func1D,

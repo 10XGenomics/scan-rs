@@ -326,9 +326,7 @@ where
 }
 
 #[cfg(test)]
-pub mod test {
-    // use std::iter::Enumerate;
-
+mod test {
     use super::*;
     use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};

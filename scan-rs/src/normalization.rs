@@ -21,7 +21,7 @@ pub enum Normalization {
     BinomialDeviance,
     /// binomial Pearson residuals
     BinomialPearson,
-    /// size factors specified explicity
+    /// size factors specified explicitly
     WithSizeFactors,
     /// vanilla log 2
     LogTransform,
@@ -175,6 +175,41 @@ where
         LogBase::Ten => |x: f64| (x + 1.0).log10(),
     };
     matrix.compose_map(scale_cols).apply(log1p_fn)
+}
+
+/// Base and expondent of fixed point format to convert a matrix back to floating point
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct FixedPointFormat {
+    /// Fixed point base
+    pub base: u32,
+    /// FIxed point exponent
+    pub exponent: u32,
+}
+
+/// Convert fixed point matrix back to floating point, then apply log1p transform,
+/// finally scale std to 1 and center mean to 0 (for each feature)
+pub fn log1p_normalize_fixed_point<D, M>(
+    matrix: AdaptiveMat<u32, D, M>,
+    log_base: LogBase,
+    fixed_point: FixedPointFormat,
+) -> LowRankOffset<D, impl MatrixMap<u32, f64>>
+where
+    D: Deref<Target = [AdaptiveVec]>,
+    M: MatrixMap<u32, u32>,
+{
+    let scale_cols: ScaleAxis = ScaleAxis::new(
+        Axis(1),
+        Array1::<f64>::ones(matrix.shape()[1]) / (fixed_point.base.pow(fixed_point.exponent) as f64),
+    );
+    let log1p_fn: fn(f64) -> f64 = match log_base {
+        LogBase::E => |x: f64| (x + 1.0).ln(),
+        LogBase::Two => |x: f64| (x + 1.0).log2(),
+        LogBase::Ten => |x: f64| (x + 1.0).log10(),
+    };
+    matrix
+        .compose_map(scale_cols)
+        .apply(log1p_fn)
+        .scale_and_center(Axis(1), None)
 }
 
 /// Fit the null multinomial model for normalization based on deviance/Pearson residuals.
@@ -583,7 +618,6 @@ mod test_normalization {
         ];
         let mtx = AdaptiveMatOwned::<u32>::from_dense(dense.view());
         let norm_mat = normalize_with_size_factor(mtx, Normalization::CellRanger, None);
-
         assert!(expected_out_dense.abs_diff_eq(&norm_mat.to_dense(), 1e-6));
     }
 
@@ -621,7 +655,6 @@ mod test_normalization {
         ];
         let mtx = AdaptiveMatOwned::<u32>::from_dense(dense.view());
         let norm_mat = normalize_with_size_factor(mtx, Normalization::CellRanger8, None);
-
         assert!(expected_out_dense.abs_diff_eq(&norm_mat.to_dense(), 1e-6));
     }
 
@@ -660,7 +693,6 @@ mod test_normalization {
         let features_picked = [0, 2];
         let size_factors = 1 + mtx.select_rows(&features_picked).sum_axis::<u32>(Axis(0));
         let processed_mtx = log_normalize_with_size_factor(mtx, None, LogBase::Two, Some(size_factors));
-
         assert!(expected_out_dense.abs_diff_eq(&processed_mtx.to_dense(), 1e-6));
     }
 
@@ -696,7 +728,43 @@ mod test_normalization {
         ];
         let mtx = AdaptiveMatOwned::<u32>::from_dense(dense.view());
         let norm_mat = normalize_with_size_factor(mtx, Normalization::LogTransform, None);
-
         assert!(expected_out_dense.abs_diff_eq(&norm_mat.to_dense(), 1e-6));
+    }
+
+    #[test]
+    fn test_vanilla_log1p_normalize_fixed_point() {
+        // # Python code to reconstruct this test
+        // import numpy as np
+        // mat = np.array([
+        //     [1360, 9360, 0, 0, 2640],
+        //     [1340, 6820, 4170, 80, 3910],
+        //     [0, 1330, 7800, 0, 0],
+        //     [3960, 760, 960, 1980, 0],
+        // ])
+        // almost_processed_mat = np.log2(1 + ma / 10)
+        // centering_factor = almost_processed_mat.mean(axis = 1).reshape((4,1))
+        // scaling_factor = 1/np.std(almost_processed_mat, axis=1)
+        // norm_mat = np.diag(scaling_factor).dot(almost_processed_mat - centering_factor)
+        // norm_mat
+        // array([[ 0.50075509,  1.16407001, -1.1965938 , -1.1965938 ,  0.72836249],
+        //        [-0.14245194,  0.89844192,  0.58318993, -1.88113806,  0.54195815],
+        //        [-0.80111703,  0.89623633,  1.50711477, -0.80111703, -0.80111703],
+        //        [ 0.92609909,  0.14507504,  0.25503138,  0.59722303, -1.92342854]])
+
+        let dense: Array2<u32> = array![
+            [1360, 9360, 0, 0, 2640],
+            [1340, 6820, 4170, 80, 3910],
+            [0, 1330, 7800, 0, 0],
+            [3960, 760, 960, 1980, 0],
+        ];
+        let expected_out_dense = array![
+            [0.50075509, 1.16407001, -1.1965938, -1.1965938, 0.72836249],
+            [-0.14245194, 0.89844192, 0.58318993, -1.88113806, 0.54195815],
+            [-0.80111703, 0.89623633, 1.50711477, -0.80111703, -0.80111703],
+            [0.92609909, 0.14507504, 0.25503138, 0.59722303, -1.92342854]
+        ];
+        let mtx2 = AdaptiveMatOwned::<u32>::from_dense(dense.view());
+        let norm_mat2 = log1p_normalize_fixed_point(mtx2, LogBase::Two, FixedPointFormat { base: 10, exponent: 1 });
+        assert!(expected_out_dense.abs_diff_eq(&norm_mat2.to_dense(), 1e-6));
     }
 }

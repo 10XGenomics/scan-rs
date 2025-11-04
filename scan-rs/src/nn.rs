@@ -6,8 +6,9 @@ use num_traits::bounds::Bounded;
 use num_traits::cast::FromPrimitive;
 use num_traits::identities::Zero;
 
+/// Implementation of a point in n-dimensional space.
 #[derive(PartialEq)]
-struct Pt(Vec<f64>);
+pub struct Pt(Vec<f64>);
 
 impl Point for Pt {
     fn distance(&self, other: &Self) -> f64 {
@@ -34,7 +35,7 @@ impl Point for Pt {
 
 /// Compute the `k` nearest neighbors of each row in `v`, using Euclidean distance. Each row represents a n-dimensional
 /// vector where n is the number of columns in `v`.
-pub fn knn<T>(v: &ArrayView2<f64>, k: usize) -> Array2<T>
+pub fn knn<T>(v: &ArrayView2<f64>, k: usize) -> (Array2<T>, BallTree<Pt, usize>)
 where
     T: Bounded + Clone + Copy + FromPrimitive + Send + Sync + Zero,
 {
@@ -49,16 +50,29 @@ where
         values.push(i);
     }
     let ball_tree = BallTree::new(points, values);
+    let output = find_nn::<T>(v, k, &ball_tree, false);
 
-    info!("querying points for {} neighbors", k);
+    (output, ball_tree)
+}
+
+/// Compute the k nearest neighbors in the input ball tree to each of the points in v.
+/// Points in v are not necessarily the same as the points used to build the ball tree.
+/// NOTE: include_self=true only works correctly if the points in v are the same as the
+/// points used to build the ball tree.
+pub fn find_nn<T>(v: &ArrayView2<f64>, k: usize, ball_tree: &BallTree<Pt, usize>, include_self: bool) -> Array2<T>
+where
+    T: Bounded + Clone + Copy + FromPrimitive + Send + Sync + Zero,
+{
+    let (cells, _) = v.dim();
     let mut output = Array2::from_elem((cells, k), T::max_value());
+    info!("querying points for {} neighbors", k);
     output.axis_iter_mut(Axis(0)).into_par_iter().enumerate().for_each_init(
         || ball_tree.query(),
         |query, (cell, mut output)| {
             let mut ind = 0;
             let pt = Pt(Vec::from(v.row(cell).as_slice().unwrap()));
             for (_, _, &v) in query.nn(&pt).take(k + 1) {
-                if v != cell && ind < k {
+                if (include_self || v != cell) && ind < k {
                     output[ind] = T::from_usize(v).expect("unrepresentable!!");
                     ind += 1;
                 }
@@ -130,7 +144,7 @@ mod tests {
                 continue;
             }
 
-            let fast_knn = knn::<usize>(v, *k);
+            let (fast_knn, _) = knn::<usize>(v, *k);
             let slow_knn = full_knn.slice(s![.., 0..*k]).to_owned();
 
             assert_eq!(fast_knn, slow_knn);
@@ -151,12 +165,43 @@ mod tests {
     }
 
     #[test]
+    fn test_find_nn() {
+        let all_pts = [
+            [0.0, 0.0],
+            [1.0, 1.0],
+            [2.0, 2.0],
+            [3.0, 3.0],
+            [4.0, 4.0],
+            [5.0, 5.0],
+            [6.0, 6.0],
+            [7.0, 7.0],
+            [8.0, 8.0],
+            [9.0, 9.0],
+        ];
+
+        let test_pts = [1, 3, 4, 7];
+        let ball_pts: Vec<[f64; 2]> = test_pts.iter().map(|&i| all_pts[i]).collect();
+        let ball_tree = BallTree::new(
+            ball_pts.iter().map(|&p| Pt(p.to_vec())).collect(),
+            (0..ball_pts.len()).collect(),
+        );
+
+        let all_pts = ndarray::arr2(&all_pts);
+
+        let output = find_nn::<usize>(&all_pts.view(), 1, &ball_tree, true);
+        let expected = [0, 0, 0, 1, 2, 2, 3, 3, 3, 3];
+        output.iter().zip(expected.iter()).for_each(|(out, &exp)| {
+            assert_eq!(*out, exp);
+        });
+    }
+
+    #[test]
     fn test_symmetry() {
         // A bunch of equally distant points, with one outlier
         let mut v = Array2::<f64>::eye(5);
         v[(0, 4)] = 3.0f64;
 
-        let knn = knn::<usize>(&v.view(), 4);
+        let (knn, _) = knn::<usize>(&v.view(), 4);
 
         // There are some degeneracies in the distances,
         // but the ball tree is still deterministc

@@ -42,7 +42,7 @@ impl LabelClass {
 
     /// Get the index of a label string. Returns None if the label string is not found.
     fn get_label_index(&self, label: &str) -> Option<usize> {
-        return self.labels.iter().position(|x| x == label);
+        self.labels.iter().position(|x| x == label)
     }
 
     /// Returns either the set of indices pointing to the given label or None is the label doesn't exist.

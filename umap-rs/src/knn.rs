@@ -21,7 +21,7 @@ impl<'a> Sample<'a> {
 }
 
 /// `MetricSpace` makes items comparable. It's a bit like Rust's `PartialOrd`.
-impl<'a> vpsearch::MetricSpace for Sample<'a> {
+impl vpsearch::MetricSpace for Sample<'_> {
     type UserData = DistanceFn;
     type Distance = NoisyFloat<Q, NumChecker>;
 

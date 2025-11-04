@@ -16,7 +16,7 @@ sprs = { version = "0.11", default-features = false, features = [
 sqz = { path = "../sqz" }
 
 [dependencies.hdf5]
-git = "https://github.com/10XGenomics/hdf5-rust.git"
-branch = "conda_nov2021"
-package = "hdf5"
-features = ["conda"]
+package = "hdf5-metno"
+git = "https://github.com/10XGenomics/hdf5-rust"
+branch = "main"
+features = ["static", "zlib"]

@@ -40,7 +40,7 @@ pub mod prod;
 pub mod gen_rand;
 
 #[cfg(test)]
-pub mod perf_analysis;
+mod perf_analysis;
 
 pub use low_rank_offset::LowRankOffset;
 pub use mat::{AdaptiveMat, AdaptiveMatNum, AdaptiveMatOwned, AdaptiveMatView};

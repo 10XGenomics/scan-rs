@@ -1,5 +1,4 @@
-//! Docs for the the crate
-//!
+//! Leiden community detection algorithm
 #![deny(missing_docs)]
 #![deny(warnings)]
 
@@ -27,7 +26,7 @@ mod parallel_local_moving;
 mod standard_local_moving;
 
 #[cfg(test)]
-pub mod test;
+mod test;
 
 pub use clustering::{Clustering, SimpleClustering};
 pub use network::{Graph, Network};

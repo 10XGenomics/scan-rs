@@ -49,7 +49,7 @@ where
     fn mem_size(&self) -> usize;
 
     /// Return an iterator over the non-zero values in the vector
-    fn iter(&self) -> AbsIter<Self> {
+    fn iter(&'_ self) -> AbsIter<'_, Self> {
         AbsIter {
             idx: self.get_index(0),
             vec: self,
@@ -58,7 +58,7 @@ where
     }
 
     /// Iterate over the non-zero values in the given `range` of indices.
-    fn iter_range(&self, range: std::ops::Range<usize>) -> AbsIter<Self> {
+    fn iter_range(&'_ self, range: std::ops::Range<usize>) -> AbsIter<'_, Self> {
         AbsIter {
             idx: self.get_index(range.start),
             vec: self,
@@ -92,7 +92,7 @@ where
     end: usize,
 }
 
-impl<'s, T: AbstractVec> Iterator for AbsIter<'s, T> {
+impl<T: AbstractVec> Iterator for AbsIter<'_, T> {
     type Item = (usize, T::Output);
 
     #[inline]
@@ -601,9 +601,9 @@ where
         let pos8 = index.index4.map(|v| self.pattern8.get_pos(v));
         let pos_sp = index.index_sp.map(|v| self.sparse_data.get_nonzero(v).0);
 
-        let ipos4 = pos4.unwrap_or(usize::max_value());
-        let ipos8 = pos4.unwrap_or(usize::max_value());
-        let ipos_sp = pos4.unwrap_or(usize::max_value());
+        let ipos4 = pos4.unwrap_or(usize::MAX);
+        let ipos8 = pos4.unwrap_or(usize::MAX);
+        let ipos_sp = pos4.unwrap_or(usize::MAX);
 
         if pos4.is_some() && ipos4 < ipos8 && ipos4 < ipos_sp {
             index.index4 = self.pattern4.incr(index.index4.unwrap());
@@ -629,9 +629,9 @@ where
         let pos8 = index.index4.map(|v| self.pattern8.get_pos(v));
         let pos_sp = index.index_sp.map(|v| self.sparse_data.get_nonzero(v).0);
 
-        let ipos4 = pos4.unwrap_or(usize::max_value());
-        let ipos8 = pos8.unwrap_or(usize::max_value());
-        let ipos_sp = pos_sp.unwrap_or(usize::max_value());
+        let ipos4 = pos4.unwrap_or(usize::MAX);
+        let ipos8 = pos8.unwrap_or(usize::MAX);
+        let ipos_sp = pos_sp.unwrap_or(usize::MAX);
 
         if ipos4 < ipos8 && ipos4 < ipos_sp {
             let v = self.dense_data_4.get(index.index4.unwrap());
@@ -1183,7 +1183,7 @@ impl AdaptiveVec {
     }
 
     /// Iterate over the non-zero elements of the vector
-    pub fn iter(&self) -> AdaptiveVecIter {
+    pub fn iter(&'_ self) -> AdaptiveVecIter<'_> {
         match self {
             AdaptiveVec::V(v) => AdaptiveVecIter::V(v.iter()),
             AdaptiveVec::D3(v) => AdaptiveVecIter::D3(v.iter()),
@@ -1348,7 +1348,7 @@ pub enum AdaptiveVecIter<'a> {
     V(AbsIter<'a, SimpleSparse<u32>>),
 }
 
-impl<'a> Iterator for AdaptiveVecIter<'a> {
+impl Iterator for AdaptiveVecIter<'_> {
     type Item = (usize, u32);
 
     #[inline]
@@ -1367,7 +1367,7 @@ impl<'a> Iterator for AdaptiveVecIter<'a> {
 }
 
 #[cfg(test)]
-pub mod test {
+mod test {
     use super::*;
     use crate::gen_rand::gen_vec_bounded;
     use rand::prelude::{Rng, SeedableRng};
@@ -1449,7 +1449,7 @@ pub mod test {
         }
     }
 
-    pub fn convert_range(pos_range: Range<usize>, indexes: &[u32]) -> Range<usize> {
+    fn convert_range(pos_range: Range<usize>, indexes: &[u32]) -> Range<usize> {
         let start = indexes.binary_search(&(pos_range.start as u32));
         let end = indexes.binary_search(&(pos_range.end as u32));
 
@@ -1464,7 +1464,7 @@ pub mod test {
         s..e
     }
 
-    pub fn random_range(rng: &mut impl Rng, len: usize) -> Range<usize> {
+    fn random_range(rng: &mut impl Rng, len: usize) -> Range<usize> {
         let start: usize = rng.random_range(0..len);
         let end: usize = rng.random_range(start..len);
         start..end
