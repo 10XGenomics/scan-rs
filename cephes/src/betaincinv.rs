@@ -61,20 +61,15 @@ pub fn betaincinv(aa: f64, bb: f64, yy0: f64) -> f64 {
         let d = 2.0 * d;
         if d < MINLOG {
             // underflow, x <- 0.0
-            if rflg {
-                return 1.0 - MACHEP;
-            } else {
-                return 0.0;
-            }
+            return if rflg { 1.0 - MACHEP } else { 0.0 };
+        }
+        x = a / (a + b * d.exp());
+        y = betainc(a, b, x);
+        let yp = (y - y0) / y0;
+        if yp.abs() < 0.2 {
+            state = NewT;
         } else {
-            x = a / (a + b * d.exp());
-            y = betainc(a, b, x);
-            let yp = (y - y0) / y0;
-            if yp.abs() < 0.2 {
-                state = NewT;
-            } else {
-                state = IHalve;
-            }
+            state = IHalve;
         }
     }
 
@@ -232,7 +227,6 @@ pub fn betaincinv(aa: f64, bb: f64, yy0: f64) -> f64 {
                 }
                 dithresh = 256.0 * MACHEP;
                 state = IHalve;
-                continue 'outer;
             }
         }
     }

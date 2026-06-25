@@ -2,7 +2,7 @@ use crate::{AdaptiveMat, AdaptiveVec};
 use ndarray::Array2;
 use num_traits::{One, Zero};
 use rand::distr::uniform::SampleUniform;
-use rand::prelude::Rng;
+use rand::{Rng, RngExt};
 
 /// Generate a random dense matrix with values in the range `[0, 100)`.
 pub fn random_dense_mat(rng: &mut impl Rng, rows: usize, cols: usize) -> Array2<u32> {
@@ -16,7 +16,7 @@ pub fn gen_vec_bounded<R: Rng + ?Sized, T: Zero + One + SampleUniform + Copy + P
     bound: T,
 ) -> Vec<T> {
     std::iter::repeat(())
-        .map(|_| rng.random_range(T::zero() + T::one()..bound))
+        .map(|()| rng.random_range(T::zero() + T::one()..bound))
         .take(size)
         .collect()
 }
@@ -42,7 +42,7 @@ pub fn random_adaptive_mat(
     range: u32,
     order: Option<sprs::CompressedStorage>,
 ) -> AdaptiveMat {
-    let storage = order.unwrap_or(if rng.random_bool(0.5) { sprs::CSR } else { sprs::CSC });
+    let storage = order.unwrap_or_else(|| if rng.random_bool(0.5) { sprs::CSR } else { sprs::CSC });
 
     let mut data = Vec::with_capacity(if storage == sprs::CSR { rows } else { cols });
 

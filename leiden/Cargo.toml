@@ -6,6 +6,9 @@ license-file = "../LICENSE"
 edition = "2021"
 include = ["src/**/*", "LICENSE", "README.md"]
 
+[lints]
+workspace = true
+
 [dependencies]
 fxhash = "0.2"
 num-traits = "0.2"

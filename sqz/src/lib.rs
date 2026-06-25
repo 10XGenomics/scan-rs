@@ -13,9 +13,8 @@
 //! - Use small bit-width types to hold values, with fallback to wider types for outliers
 
 #![deny(missing_docs)]
-#![deny(warnings)]
 
-#[allow(unused_extern_crates)]
+#[expect(unused_extern_crates)]
 #[cfg(feature = "blas")]
 extern crate blas_src;
 

@@ -8,20 +8,20 @@ const MAXGAM: f64 = 171.624_376_956_302_7;
 pub fn beta(a: f64, b: f64) -> f64 {
     if a <= 0.0 && a == a.floor() {
         let ai = a as i32;
-        if a == ai as f64 {
-            return beta_negint(ai, b);
+        return if a == ai as f64 {
+            beta_negint(ai, b)
         } else {
-            return f64::INFINITY;
-        }
+            f64::INFINITY
+        };
     }
 
     if b <= 0.0 && b == b.floor() {
         let bi = b as i32;
-        if a == bi as f64 {
-            return beta_negint(bi, a);
+        return if a == bi as f64 {
+            beta_negint(bi, a)
         } else {
-            return f64::INFINITY;
-        }
+            f64::INFINITY
+        };
     }
 
     let (a, b) = if a.abs() < b.abs() { (b, a) } else { (a, b) };
@@ -77,20 +77,20 @@ fn beta_negint(a: i32, b: f64) -> f64 {
 pub fn betaln(a: f64, b: f64) -> f64 {
     if a <= 0.0 && a == a.floor() {
         let ai = a as i32;
-        if a == ai as f64 {
-            return betaln_negint(ai, b);
+        return if a == ai as f64 {
+            betaln_negint(ai, b)
         } else {
             return f64::INFINITY;
-        }
+        };
     }
 
     if b <= 0.0 && b == b.floor() {
         let bi = b as i32;
-        if b == bi as f64 {
-            return betaln_negint(bi, a);
+        return if b == bi as f64 {
+            betaln_negint(bi, a)
         } else {
-            return f64::INFINITY;
-        }
+            f64::INFINITY
+        };
     }
 
     let (a, b) = if a.abs() < b.abs() { (b, a) } else { (a, b) };

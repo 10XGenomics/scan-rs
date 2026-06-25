@@ -1,9 +1,8 @@
 //! # scan-rs: Single Cell Analysis in Rust
 
 #![deny(missing_docs)]
-#![deny(warnings)]
 
-#[allow(unused_extern_crates)]
+#[expect(unused_extern_crates)]
 extern crate blas_src;
 
 /// Dimensionality reduction methods

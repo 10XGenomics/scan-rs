@@ -13,7 +13,7 @@ pub enum DistanceMetric {
 }
 
 impl DistanceMetric {
-    pub fn apply<T: Float + Mul>(self, x1: &ArrayView1<T>, x2: &ArrayView1<T>) -> T {
+    pub fn apply<T: Float + Mul>(self, x1: &ArrayView1<'_, T>, x2: &ArrayView1<'_, T>) -> T {
         match self {
             DistanceMetric::Euclidean => {
                 let mut dx = x2 - x1;
@@ -41,7 +41,7 @@ impl ClusterDirection {
             ClusterDirection::Columns => array.ncols(),
         }
     }
-    pub fn get<F: Float>(self, array: &Array2<F>, index: usize) -> ArrayView1<F> {
+    pub fn get<F: Float>(self, array: &Array2<F>, index: usize) -> ArrayView1<'_, F> {
         match self {
             ClusterDirection::Rows => array.row(index),
             ClusterDirection::Columns => array.column(index),
@@ -131,9 +131,7 @@ pub struct HierarchicalCluster<F: Float> {
 impl<F: Float + KodamaFloat> HierarchicalCluster<F> {
     pub fn new(array: &Array2<F>, metric: DistanceMetric, method: LinkageMethod, direction: ClusterDirection) -> Self {
         let n = direction.n(array);
-        if n < 2 {
-            panic!("Need at least two elements to do hierarchical clustering");
-        }
+        assert!(n >= 2, "Need at least two elements to do hierarchical clustering");
         let mut condensed_dissimilarity = vec![];
 
         for i in 0..n {
@@ -176,7 +174,7 @@ impl<F: Float + KodamaFloat> HierarchicalCluster<F> {
     }
 
     fn modular_smallest_leaf_ordering(&self) -> Vec<usize> {
-        let mut min_dissimilarity: Vec<F> = vec![num_traits::Float::max_value(); self.total_nodes()];
+        let mut min_dissimilarity: Vec<F> = vec![Float::max_value(); self.total_nodes()];
         for (merged_cluster, step) in self.steps_with_cluster_num() {
             min_dissimilarity[merged_cluster] = min_dissimilarity[step.cluster1]
                 .min(min_dissimilarity[step.cluster2])
@@ -193,12 +191,13 @@ impl<F: Float + KodamaFloat> HierarchicalCluster<F> {
         }
         ordering.ordered_leaves()
     }
+
     /// Order the leaves according to the ordering algorithm specified
     ///
     /// Returns
     /// - x : A vector with length equal to the number of nodes.
-    ///       x[i] = j implies that node "j" is present at index "i"
-    ///       when reading the leaves from left to right
+    ///   x[i] = j implies that node "j" is present at index "i"
+    ///   when reading the leaves from left to right
     pub fn leaves(&self, ordering: LeafOrdering) -> Vec<usize> {
         match ordering {
             LeafOrdering::Naive => self.naive_leaf_ordering(),

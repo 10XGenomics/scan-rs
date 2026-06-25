@@ -65,11 +65,11 @@ where
     }
 }
 
-impl<'a, D, M, DS> Dot<ArrayBase<DS, Ix2>> for LowRankOffset<D, M>
+impl<D, M, DS> Dot<ArrayBase<DS, Ix2>> for LowRankOffset<D, M>
 where
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, f64>,
-    DS: 'a + Data<Elem = f64>,
+    DS: Data<Elem = f64>,
 {
     type Output = Array2<f64>;
 
@@ -80,11 +80,11 @@ where
     }
 }
 
-impl<'a, D, M, DS> Dot<LowRankOffset<D, M>> for ArrayBase<DS, Ix2>
+impl<D, M, DS> Dot<LowRankOffset<D, M>> for ArrayBase<DS, Ix2>
 where
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, f64>,
-    DS: 'a + Data<Elem = f64>,
+    DS: Data<Elem = f64>,
 {
     type Output = Array2<f64>;
 
@@ -101,8 +101,8 @@ mod test {
     use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};
     use rand::distr::{Distribution, Uniform};
-    use rand::prelude::{Rng, SeedableRng};
     use rand::rngs::SmallRng;
+    use rand::{RngExt, SeedableRng};
 
     #[derive(Clone, PartialEq, Eq, Debug)]
     struct F64Map;
@@ -121,7 +121,7 @@ mod test {
     }
 
     // stolen from ndarray - not currently exported.
-    fn assert_close<D>(a: ArrayView<f64, D>, b: ArrayView<f64, D>)
+    fn assert_close<D>(a: ArrayView<'_, f64, D>, b: ArrayView<'_, f64, D>)
     where
         D: Dimension,
     {

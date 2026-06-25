@@ -9,7 +9,7 @@ use crate::func_1d::Func1D;
 use crate::umap::Umap;
 use ndarray::{array, Array1, Array2};
 use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 
 pub struct State {
     pub move_other: bool,
@@ -96,7 +96,7 @@ impl State {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub fn initialize_optimization(
     umap: &Umap,
     random: SmallRng,
@@ -189,7 +189,7 @@ fn optimize_layout_step(state: &mut State) {
     for i in 0..state.epochs_per_sample.len() {
         match state.distance_type.0 {
             DistanceTypeImpl::Euclidean { .. } => iterate_euclidean(state, i),
-            _ => iterate(state, i),
+            DistanceTypeImpl::Other { .. } => iterate(state, i),
         }
     }
 
@@ -285,9 +285,11 @@ fn iterate(state: &mut State, i: usize) {
     let (a, b, gamma, alpha) = (state.a, state.b, state.gamma, state.alpha);
     let embedded_dim = state.embedding.shape()[1];
 
-    let distance_grad_fn = match state.distance_type.0 {
-        DistanceTypeImpl::Other { grad, .. } => grad,
-        _ => panic!("unreachable"),
+    let DistanceTypeImpl::Other {
+        grad: distance_grad_fn, ..
+    } = state.distance_type.0
+    else {
+        panic!("unreachable")
     };
 
     let (dist_output, grad_dist_output) = output_metric(&state.embedding, j, k, distance_grad_fn);

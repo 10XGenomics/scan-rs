@@ -91,7 +91,7 @@ impl Network {
         let mut partial_sums = vec![];
 
         // sum up the edge weights in parallelized over chunks, then sum the chunks to ensure
-        // a deterministic result.  Just allow double counting of edge weights, and fix at the end
+        // a deterministic result. Just allow double counting of edge weights, and fix at the end
         // almost certainly faster than filtering on the fly.
         self.graph
             .edges
@@ -160,7 +160,7 @@ impl Network {
             *edge_memo.entry((min1, max1)).or_insert(0.0) += e.weight();
         }
 
-        for (&(c1, c2), &weight) in edge_memo.iter() {
+        for (&(c1, c2), &weight) in &edge_memo {
             cluster_g.add_edge(c1.into(), c2.into(), weight);
         }
 

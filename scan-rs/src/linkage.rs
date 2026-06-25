@@ -1,7 +1,7 @@
 use ndarray::{s, Array1, Array2, ArrayView1};
 use noisy_float::types::n64;
 
-fn euclidean(x: ArrayView1<f64>, y: ArrayView1<f64>) -> f64 {
+fn euclidean(x: ArrayView1<'_, f64>, y: ArrayView1<'_, f64>) -> f64 {
     let n = x.dim();
     let mut d = 0.0;
     for i in 0..n {

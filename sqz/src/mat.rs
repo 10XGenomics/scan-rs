@@ -9,6 +9,7 @@ use ndarray::linalg::Dot;
 use ndarray::{Array, Array1, Array2, ArrayBase, Axis, Ix1, Ix2};
 use num_traits::{FromPrimitive, Num, NumAssignRef, Zero};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use snoop::{CancelProgress, NoOpSnoop};
 use std::collections::HashSet;
 use std::marker::PhantomData;
@@ -25,14 +26,42 @@ impl AdaptiveMatNum for f64 {}
 /// Matrix formed from a collection of `AdaptiveVec` values. The matrix map, M, is an
 /// implementation of the `MatrixMap` trait that permits mapping each non-zero value to a
 /// new value.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
+#[serde(bound(
+    serialize = "D: Serialize, M: Serialize",
+    deserialize = "D: serde::de::DeserializeOwned, M: serde::de::DeserializeOwned"
+))]
 pub struct AdaptiveMat<N = u32, D = Vec<AdaptiveVec>, M = MatrixIntoMap<u32, N>> {
     pub(crate) rows: usize,
     pub(crate) cols: usize,
+    #[serde(with = "compressed_storage_serde")]
     pub(crate) storage: sprs::CompressedStorage,
     pub(crate) data: D,
     pub(crate) matrix_map: M,
-    _n: PhantomData<N>,
+    phantom_n: PhantomData<N>,
+}
+
+/// Serde helper for `sprs::CompressedStorage` (CSR ↔ 0, CSC ↔ 1).
+pub mod compressed_storage_serde {
+    use serde::{Deserialize, Deserializer, Serializer};
+    use sprs::CompressedStorage;
+
+    /// Serialize `CompressedStorage` as a `u8` (CSR = 0, CSC = 1).
+    pub fn serialize<S: Serializer>(storage: &CompressedStorage, s: S) -> Result<S::Ok, S::Error> {
+        match storage {
+            CompressedStorage::CSR => s.serialize_u8(0),
+            CompressedStorage::CSC => s.serialize_u8(1),
+        }
+    }
+
+    /// Deserialize `CompressedStorage` from a `u8` (0 = CSR, 1 = CSC).
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<CompressedStorage, D::Error> {
+        match u8::deserialize(d)? {
+            0 => Ok(CompressedStorage::CSR),
+            1 => Ok(CompressedStorage::CSC),
+            v => Err(serde::de::Error::custom(format!("invalid CompressedStorage: {v}"))),
+        }
+    }
 }
 
 /// View of an `AdaptiveMat`
@@ -82,10 +111,10 @@ where
 
         for v in mat.outer_iterator() {
             tmp_indices.clear();
-            tmp_indices.extend(v.indices().iter().cloned().map(|v: I| v.to_u32().unwrap()));
+            tmp_indices.extend(v.indices().iter().copied().map(|v: I| v.to_u32().unwrap()));
 
             tmp_values.clear();
-            tmp_values.extend(v.data().iter().cloned().map(std::convert::Into::into));
+            tmp_values.extend(v.data().iter().cloned().map(Into::into));
 
             let compressed_vec = AdaptiveVec::new(vec_len, &tmp_values, &tmp_indices);
             data.push(compressed_vec);
@@ -111,14 +140,14 @@ where
         data: D,
         matrix_map: M,
     ) -> AdaptiveMat<N, D, M> {
-        let _n = PhantomData;
+        let phantom_n = PhantomData;
         AdaptiveMat {
             rows,
             cols,
             storage,
             data,
             matrix_map,
-            _n,
+            phantom_n,
         }
     }
 
@@ -294,7 +323,7 @@ where
         let m = self.shape()[axis.index()] as f64;
         for (mean, var) in means.iter_mut().zip(vars.iter_mut()) {
             *mean /= m;
-            *var = *var / m - mean.powi(2)
+            *var = *var / m - mean.powi(2);
         }
 
         (means, vars)
@@ -323,14 +352,14 @@ where
                         }
                         _ => return,
                     }
-                })
+                });
             }
         } else {
             for &col in cols {
                 self.data[col].foreach(|row, value| {
                     means[row] += self.matrix_map.map(value, row, col).into();
                     vars[row] += self.matrix_map.map(value, row, col).into().powi(2);
-                })
+                });
             }
         }
 
@@ -338,7 +367,7 @@ where
         let m = cols.len() as f64;
         for (mean, var) in means.iter_mut().zip(vars.iter_mut()) {
             *mean /= m;
-            *var = *var / m - mean.powi(2)
+            *var = *var / m - mean.powi(2);
         }
 
         (means, vars)
@@ -405,7 +434,7 @@ where
                         }
                         _ => return,
                     }
-                })
+                });
             }
         } else {
             for (i, &col) in cols.iter().enumerate() {
@@ -440,10 +469,10 @@ where
                         }
                         _ => return,
                     }
-                })
+                });
             }
         } else {
-            for &col in cols.iter() {
+            for &col in cols {
                 self.data[col].foreach(|row, value| arr[row] += self.matrix_map.map(value, row, col).into());
             }
         }
@@ -491,42 +520,36 @@ where
                 }
 
                 // setup coordinating iterators
-                let mut iter = cols1
-                    .iter()
-                    .copied()
-                    .merge_join_by(cols2.iter().copied(), std::cmp::Ord::cmp);
+                let mut iter = cols1.iter().copied().merge_join_by(cols2.iter().copied(), Ord::cmp);
                 let mut next = iter.next();
                 vec.foreach(|col, value| loop {
                     match next {
-                        Some(Both(c, _)) | Some(Left(c)) | Some(Right(c)) if c < col => {
+                        Some(Both(c, _) | Left(c) | Right(c)) if c < col => {
                             next = iter.next();
                         }
                         Some(Both(c, _)) if c == col => {
                             let mvalue: O = self.matrix_map.map(value, row, col).into();
                             arr1[row] += mvalue;
                             arr2[row] += mvalue;
-                            next = iter.next()
+                            next = iter.next();
                         }
                         Some(Left(c)) if c == col => {
                             arr1[row] += self.matrix_map.map(value, row, col).into();
-                            next = iter.next()
+                            next = iter.next();
                         }
                         Some(Right(c)) if c == col => {
                             arr2[row] += self.matrix_map.map(value, row, col).into();
-                            next = iter.next()
+                            next = iter.next();
                         }
                         _ => return,
                     }
-                })
+                });
             }
         } else {
             let cols = cols1.len() + cols2.len();
             let progress_modulo = (cols / progress_precision).max(1);
 
-            let iter = cols1
-                .iter()
-                .copied()
-                .merge_join_by(cols2.iter().copied(), std::cmp::Ord::cmp);
+            let iter = cols1.iter().copied().merge_join_by(cols2.iter().copied(), Ord::cmp);
 
             for (i, step) in iter.enumerate() {
                 if i % progress_modulo == 0 {
@@ -560,7 +583,7 @@ where
     }
 
     /// Create an AdaptiveMat from a dense array.
-    pub fn from_dense<T: Clone + Into<u32>>(v: ndarray::ArrayView2<T>) -> AdaptiveMat {
+    pub fn from_dense<T: Clone + Into<u32>>(v: ndarray::ArrayView2<'_, T>) -> AdaptiveMat {
         let mut values: Vec<u32> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
         let mut vecs = Vec::new();
@@ -595,13 +618,13 @@ where
         let tick = Instant::now();
         let sz = self.rows();
 
-        let mut _cols_a = vec![0u32; self.cols()];
-        let mut _cols_b = vec![0u32; self.cols()];
-        for idx in cols_a.iter() {
-            _cols_a[*idx] = 1u32
+        let mut mut_cols_a = vec![0u32; self.cols()];
+        let mut mut_cols_b = vec![0u32; self.cols()];
+        for idx in cols_a {
+            mut_cols_a[*idx] = 1u32;
         }
-        for idx in cols_b.iter() {
-            _cols_b[*idx] = 1u32
+        for idx in cols_b {
+            mut_cols_b[*idx] = 1u32;
         }
         info!(
             "sum_cols_diff count_a  {}  count_b {} took {:.3}s",
@@ -610,13 +633,13 @@ where
             tick.elapsed().as_millis() as f64 / 1000.0
         );
         if self.storage == sprs::CSR {
-            let mut _cols_a = vec![0f64; self.cols()];
-            let mut _cols_b = vec![0f64; self.cols()];
-            for idx in cols_a.iter() {
-                _cols_a[*idx] = 1f64
+            let mut mut_cols_a = vec![0f64; self.cols()];
+            let mut mut_cols_b = vec![0f64; self.cols()];
+            for idx in cols_a {
+                mut_cols_a[*idx] = 1f64;
             }
-            for idx in cols_b.iter() {
-                _cols_b[*idx] = 1f64
+            for idx in cols_b {
+                mut_cols_b[*idx] = 1f64;
             }
             info!(
                 "sum_cols_diff count_a  {}  count_b {} took {:.3}s",
@@ -630,8 +653,10 @@ where
                     vecs.par_iter()
                         .map(|&vec| {
                             (
-                                vec.iter().fold(0f64, |acc, (col, v)| acc + (v as f64) * _cols_a[col]),
-                                vec.iter().fold(0f64, |acc, (col, v)| acc + (v as f64) * _cols_b[col]),
+                                vec.iter()
+                                    .fold(0f64, |acc, (col, v)| acc + (v as f64) * mut_cols_a[col]),
+                                vec.iter()
+                                    .fold(0f64, |acc, (col, v)| acc + (v as f64) * mut_cols_b[col]),
                             )
                         })
                         .collect::<Vec<(f64, f64)>>()
@@ -641,10 +666,12 @@ where
                     .iter()
                     .map(|vec| {
                         (
-                            vec.iter()
-                                .fold(0f64, |acc, (col, v)| (acc + (v as f64) * _cols_a[col]) / factors[col]),
-                            vec.iter()
-                                .fold(0f64, |acc, (col, v)| (acc + (v as f64) * _cols_b[col]) / factors[col]),
+                            vec.iter().fold(0f64, |acc, (col, v)| {
+                                (acc + (v as f64) * mut_cols_a[col]) / factors[col]
+                            }),
+                            vec.iter().fold(0f64, |acc, (col, v)| {
+                                (acc + (v as f64) * mut_cols_b[col]) / factors[col]
+                            }),
                         )
                     })
                     .collect::<Vec<(f64, f64)>>(),
@@ -663,20 +690,20 @@ where
             let mut arr_b = vec![0u32; sz];
             match norm_factors {
                 None => {
-                    for idx in cols_a.iter() {
+                    for idx in cols_a {
                         self.data[*idx].foreach(|row, value| arr_a[row] += value);
                     }
 
-                    for idx in cols_b.iter() {
+                    for idx in cols_b {
                         self.data[*idx].foreach(|row, value| arr_b[row] += value);
                     }
                 }
                 Some(factors) => {
-                    for idx in cols_a.iter() {
+                    for idx in cols_a {
                         self.data[*idx].foreach(|row, value| arr_a[row] += value / (factors[row] as u32));
                     }
 
-                    for idx in cols_b.iter() {
+                    for idx in cols_b {
                         self.data[*idx].foreach(|row, value| arr_b[row] += value / (factors[row] as u32));
                     }
                 }
@@ -714,7 +741,7 @@ where
                 if !exclude_rows.contains(&row) {
                     for (col, value) in vec.iter() {
                         if !exclude_cols.contains(&col) {
-                            arr[idx(row, col)] += self.matrix_map.map(value, row, col).into()
+                            arr[idx(row, col)] += self.matrix_map.map(value, row, col).into();
                         }
                     }
                 }
@@ -1005,7 +1032,7 @@ where
             storage: self.storage,
             data,
             matrix_map: self.matrix_map.clone(),
-            _n: self._n,
+            phantom_n: self.phantom_n,
         }
     }
 
@@ -1039,18 +1066,18 @@ where
             storage: self.storage,
             data,
             matrix_map: self.matrix_map.clone(),
-            _n: self._n,
+            phantom_n: self.phantom_n,
         }
     }
 }
 
-impl<'a, 'b, N, D, M, A, DS> Dot<ArrayBase<DS, Ix2>> for AdaptiveMat<N, D, M>
+impl<N, D, M, A, DS> Dot<ArrayBase<DS, Ix2>> for AdaptiveMat<N, D, M>
 where
     N: AdaptiveMatNum,
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, N>,
-    A: 'a + Copy + Default + Num + Mul<N, Output = A>,
-    DS: 'b + ndarray::Data<Elem = A>,
+    A: Copy + Default + Num + Mul<N, Output = A>,
+    DS: ndarray::Data<Elem = A>,
 {
     type Output = Array<A, Ix2>;
 
@@ -1062,13 +1089,13 @@ where
     }
 }
 
-impl<'a, 'b, N, D, M, A, DS> Dot<ArrayBase<DS, Ix1>> for AdaptiveMat<N, D, M>
+impl<N, D, M, A, DS> Dot<ArrayBase<DS, Ix1>> for AdaptiveMat<N, D, M>
 where
     N: AdaptiveMatNum,
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, N>,
-    A: 'a + Copy + Default + Num + Mul<N, Output = A>,
-    DS: 'b + ndarray::Data<Elem = A>,
+    A: Copy + Default + Num + Mul<N, Output = A>,
+    DS: ndarray::Data<Elem = A>,
 {
     type Output = Array<A, Ix1>;
 
@@ -1084,13 +1111,13 @@ where
     }
 }
 
-impl<'a, 'b, N, D, M, A, DS> Dot<AdaptiveMat<N, D, M>> for ArrayBase<DS, Ix2>
+impl<N, D, M, A, DS> Dot<AdaptiveMat<N, D, M>> for ArrayBase<DS, Ix2>
 where
     N: AdaptiveMatNum,
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, N>,
-    A: 'a + Copy + Default + Num + Mul<N, Output = A>,
-    DS: 'b + ndarray::Data<Elem = A>,
+    A: Copy + Default + Num + Mul<N, Output = A>,
+    DS: ndarray::Data<Elem = A>,
 {
     type Output = Array<A, Ix2>;
 
@@ -1105,13 +1132,13 @@ where
     }
 }
 
-impl<'a, 'b, N, D, M, A, DS> Dot<&AdaptiveMat<N, D, M>> for ArrayBase<DS, Ix2>
+impl<N, D, M, A, DS> Dot<&AdaptiveMat<N, D, M>> for ArrayBase<DS, Ix2>
 where
     N: AdaptiveMatNum,
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, N>,
-    A: 'a + Copy + Default + Num + Mul<N, Output = A>,
-    DS: 'b + ndarray::Data<Elem = A>,
+    A: Copy + Default + Num + Mul<N, Output = A>,
+    DS: ndarray::Data<Elem = A>,
 {
     type Output = Array<A, Ix2>;
 
@@ -1120,13 +1147,13 @@ where
     }
 }
 
-impl<'a, 'b, N, D, M, A, DS> Dot<AdaptiveMat<N, D, M>> for ArrayBase<DS, Ix1>
+impl<N, D, M, A, DS> Dot<AdaptiveMat<N, D, M>> for ArrayBase<DS, Ix1>
 where
     N: AdaptiveMatNum,
     D: Deref<Target = [AdaptiveVec]>,
     M: MatrixMap<u32, N>,
-    A: 'a + Copy + Default + Num + Mul<N, Output = A>,
-    DS: 'b + ndarray::Data<Elem = A>,
+    A: Copy + Default + Num + Mul<N, Output = A>,
+    DS: ndarray::Data<Elem = A>,
 {
     type Output = Array<A, Ix1>;
 
@@ -1151,8 +1178,8 @@ pub mod test {
     use approx::assert_abs_diff_eq;
     use ndarray::{array, s, ArrayView, Dimension};
     use rand::distr::Uniform;
-    use rand::prelude::{Rng, SeedableRng};
     use rand::rngs::SmallRng;
+    use rand::{Rng, RngExt, SeedableRng};
 
     #[derive(Clone, Debug, PartialEq)]
     enum RandomMap {
@@ -1209,7 +1236,7 @@ pub mod test {
     }
 
     // stolen from ndarray - not currently exported.
-    fn assert_close<D>(a: ArrayView<f64, D>, b: ArrayView<f64, D>)
+    fn assert_close<D>(a: ArrayView<'_, f64, D>, b: ArrayView<'_, f64, D>)
     where
         D: Dimension,
     {

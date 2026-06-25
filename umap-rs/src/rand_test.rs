@@ -1,8 +1,7 @@
 //! Large test of UMAP using mocked up single-cell data
 
 #[cfg(test)]
-#[allow(clippy::module_inception)]
-pub mod rand_test {
+mod test {
     use crate::dist::DistanceType;
     use crate::umap::Umap;
     use ndarray::{Array1, Array2};
@@ -102,10 +101,7 @@ pub mod rand_test {
 
         // remove this line to save outputs, in case they require updating.
         let _ = std::fs::remove_dir_all(prefix);
-
-        if !messages.is_empty() {
-            panic!("{messages:?}");
-        }
+        assert!(messages.is_empty(), "{messages:?}");
     }
 
     /// Check for exact matching of results. Due to our use of the system libm (via f64::powf) the results
@@ -132,10 +128,7 @@ pub mod rand_test {
 
         // remove this line to save outputs, in case they require updating.
         let _ = std::fs::remove_dir_all(prefix);
-
-        if !messages.is_empty() {
-            panic!("{messages:?}");
-        }
+        assert!(messages.is_empty(), "{messages:?}");
     }
 
     #[derive(Serialize, Deserialize)]
@@ -147,7 +140,7 @@ pub mod rand_test {
         y: Q,
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     fn run_umap_test(
         cmp_prefix: &str,
         prefix: &str,
@@ -189,7 +182,7 @@ pub mod rand_test {
         let mut path = PathBuf::from(prefix);
         path.push(format!("{name}.csv"));
 
-        let file = std::fs::File::create(path).unwrap();
+        let file = std::fs::File::create(path)?;
         let mut writer = csv::WriterBuilder::new().has_headers(true).from_writer(file);
 
         for cell in 0..embedding.shape()[0] {
@@ -201,7 +194,7 @@ pub mod rand_test {
                 y: embedding[(cell, 1)],
             };
 
-            writer.serialize(pt).unwrap();
+            writer.serialize(pt)?;
         }
 
         Ok(())

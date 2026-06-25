@@ -23,12 +23,7 @@ pub fn load_mtx(path: impl AsRef<Path>) -> Result<AdaptiveMat, Error> {
             continue;
         }
         let mut data = line.split_whitespace();
-        if mat.is_none() {
-            let nrow = data.next().ok_or_else(|| format_err!("no NROW"))?.parse::<usize>()?;
-            let ncol = data.next().ok_or_else(|| format_err!("no NCOL"))?.parse::<usize>()?;
-            let nnz = data.next().ok_or_else(|| format_err!("no NNZ"))?.parse::<usize>()?;
-            mat = Some(TriMat::with_capacity((nrow, ncol), nnz));
-        } else {
+        if let Some(mat) = mat.as_mut() {
             let row = data
                 .next()
                 .ok_or_else(|| format_err!("missing ROW"))?
@@ -40,7 +35,12 @@ pub fn load_mtx(path: impl AsRef<Path>) -> Result<AdaptiveMat, Error> {
                 .parse::<usize>()?
                 - 1;
             let val = data.next().ok_or_else(|| format_err!("missing VAL"))?.parse::<u32>()?;
-            mat.as_mut().unwrap().add_triplet(row, col, val);
+            mat.add_triplet(row, col, val);
+        } else {
+            let nrow = data.next().ok_or_else(|| format_err!("no NROW"))?.parse::<usize>()?;
+            let ncol = data.next().ok_or_else(|| format_err!("no NCOL"))?.parse::<usize>()?;
+            let nnz = data.next().ok_or_else(|| format_err!("no NNZ"))?.parse::<usize>()?;
+            mat = Some(TriMat::with_capacity((nrow, ncol), nnz));
         }
         line.clear();
     }

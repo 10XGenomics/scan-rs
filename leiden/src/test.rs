@@ -5,7 +5,7 @@ use crate::objective::{cpm, par_cpm};
 use crate::{Clustering, Graph, Network, SimpleClustering};
 use flate2::read::GzDecoder;
 use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
@@ -117,7 +117,9 @@ fn run_leiden() {
 fn relabel_by_size(labels: &mut [i16]) -> Vec<(i16, usize)> {
     let max_label = labels.iter().max().unwrap();
     let mut hist = (0..(max_label + 1)).map(|i| (i, 0usize)).collect::<Vec<_>>();
-    labels.iter().for_each(|&x| hist[x as usize].1 += 1);
+    for &x in &*labels {
+        hist[x as usize].1 += 1;
+    }
     hist.sort_by(|(_, x), (_, y)| y.cmp(x));
     let map = hist
         .iter()
@@ -127,7 +129,7 @@ fn relabel_by_size(labels: &mut [i16]) -> Vec<(i16, usize)> {
     for x in labels.iter_mut() {
         *x = map[x];
     }
-    for kv in hist.iter_mut() {
+    for kv in &mut hist {
         kv.0 = map[&kv.0];
     }
     hist
@@ -358,6 +360,6 @@ fn edge_weight_par() {
 
         let (g, _) = gen_sample_network(&mut rng, num_clusters, nodes_per_cluster, 10.0, 0.4);
         let n = Network { graph: g };
-        check_edge_weight_par(&n)
+        check_edge_weight_par(&n);
     }
 }

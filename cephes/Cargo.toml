@@ -6,5 +6,8 @@ license-file = "../LICENSE"
 edition = "2021"
 include = ["src/**/*", "LICENSE", "!**/tests/**/*"]
 
+[lints]
+workspace = true
+
 [dev-dependencies]
 approx = "0.5"

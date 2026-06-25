@@ -3,6 +3,7 @@ use itertools::Itertools;
 use ndarray::{arr1, Array1};
 use num_traits::cast::{NumCast, ToPrimitive};
 use num_traits::{Bounded, Zero};
+use serde::{Deserialize, Serialize};
 use std::mem::size_of;
 use std::rc::Rc;
 
@@ -10,7 +11,7 @@ use std::rc::Rc;
 /// The returned value can be materialized on-the-fly by the `get` method.
 pub trait AbstractVec
 where
-    Self: std::marker::Sized,
+    Self: Sized,
 {
     /// Output value type
     type Output: Zero + PartialEq;
@@ -118,7 +119,7 @@ impl<T: AbstractVec> Iterator for AbsIter<'_, T> {
 
 /// Traditional sparse vector representatopn supporting lengths up to u32::MAX
 /// Used as a fallback store for narrow bit-width representations.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub struct SimpleSparse<T> {
     len: usize,
     indexes: Vec<u32>,
@@ -217,7 +218,7 @@ impl<T: Clone + Zero> MemConstruct for SimpleSparse<T> {
 /// blocks. The start position and length of each block of occupied indexes are stored
 /// in `block_starts` and `block_lengths`, and the offsets of occupied values within
 /// the block are stored in `index_bytes`.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub struct CompressedIndexSparse<T> {
     len: usize,
     dense_data: T,
@@ -278,7 +279,7 @@ impl<O: Zero + PartialEq + Eq, T: AbstractVec<Output = O>> AbstractVec for Compr
                     while !(self.block_starts[block_idx] <= main_idx as u32
                         && self.block_starts[block_idx + 1] > main_idx as u32)
                     {
-                        block_idx += 1
+                        block_idx += 1;
                     }
                     Some((block_idx, main_idx))
                 } else {
@@ -307,7 +308,7 @@ impl<O: Zero + PartialEq + Eq, T: AbstractVec<Output = O>> AbstractVec for Compr
             while !(self.block_starts[block_idx] <= main_idx as u32
                 && self.block_starts[block_idx + 1] > main_idx as u32)
             {
-                block_idx += 1
+                block_idx += 1;
             }
             Some((block_idx, main_idx))
         } else {
@@ -493,8 +494,8 @@ impl<TO: PartialOrd + Clone + ToPrimitive + Zero + PartialEq> PatternHybrid<TO> 
         let mut count_4bits = vec![0; len];
         let mut count_8bits = vec![0; len];
 
-        for (idxs, vals) in sample_values.iter().cloned() {
-            for (idx, val) in idxs.iter().cloned().zip(vals) {
+        for (idxs, vals) in sample_values.iter().copied() {
+            for (idx, val) in idxs.iter().copied().zip(vals) {
                 if *val >= 15 {
                     count_8bits[idx] += 1;
                 } else {
@@ -655,7 +656,7 @@ where
 /// Stores a vector of integer of type `TO`. The representation is a dense array of values of `TS` which
 /// should have a narrower bit-width the `TO`. Values `>= TS::MAX` are encoded as `TS::MAX`, with a fallback
 /// to a sparse array of `TO` values.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub struct DenseW<TS, TO> {
     nnz: usize,
     data: Vec<TS>,
@@ -756,7 +757,7 @@ impl<TS: Bounded + Into<TO> + NumCast + Copy, TO: PartialOrd + Clone + ToPrimiti
 
 /// Stores a vector of u32 values. The representation is a dense array of 4-bit byte-packed values.
 /// Values `>= 15` are encoded as `15` in the 4-bit array, with actual value stored in sparse array of u32 values.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub struct Dense4<T> {
     nnz: usize,
     len: usize,
@@ -890,7 +891,7 @@ where
 /// Stores a vector of u32 values. The representation is a dense array of 3-bit byte-packed values.
 /// Values `>= 7` are encoded as `7` in the 3-bit array, with actual value stored in sparse array of u32 values.
 /// 3-bit data is stored in blocks of 21 values packed into u64 values.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub struct Dense3<T> {
     nnz: usize,
     len: usize,
@@ -1024,7 +1025,7 @@ where
 /// Sparse Vector encoding `u32` values, with length up to `u32::MAX`.
 /// Adaptively uses the most memory-efficient storage format based on
 /// the data being stored.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum AdaptiveVec {
     /// Dense storage of 3-bit values, with fallback to a sparse array of u32 values
     D3(Dense3<u32>),
@@ -1230,42 +1231,42 @@ impl AdaptiveVec {
         match self {
             AdaptiveVec::V(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::D3(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::D4(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::D8(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::D16(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::S3(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::S4(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
             AdaptiveVec::S8(v) => {
                 for (idx, v) in v.iter() {
-                    (f)(idx, v)
+                    (f)(idx, v);
                 }
             }
         }
@@ -1370,8 +1371,8 @@ impl Iterator for AdaptiveVecIter<'_> {
 mod test {
     use super::*;
     use crate::gen_rand::gen_vec_bounded;
-    use rand::prelude::{Rng, SeedableRng};
     use rand::rngs::SmallRng;
+    use rand::{Rng, RngExt, SeedableRng};
     use std::fmt::Debug;
     use std::ops::Range;
 
@@ -1389,7 +1390,7 @@ mod test {
                 println!("indexes: {indexes:?}");
                 println!("dd: {arr:?}");
             }
-            assert_eq!(arr.get(*idx as usize), *v)
+            assert_eq!(arr.get(*idx as usize), *v);
         }
 
         // Check that every index gives the expected result
@@ -1508,6 +1509,6 @@ mod test {
         let vec2 = AdaptiveVec::new(10, &[2, 4], &[1, 3]);
         let res = vec1.dot(&vec2);
         print!(" dot {res:?}");
-        assert_eq!(res, vec1.to_dense().dot(&vec2.to_dense()))
+        assert_eq!(res, vec1.to_dense().dot(&vec2.to_dense()));
     }
 }

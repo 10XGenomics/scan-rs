@@ -6,6 +6,9 @@ license-file = "../LICENSE"
 edition = "2021"
 include = ["src/**/*"]
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "scan-rs-cmd"
 path = "src/bin/cmd.rs"

@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 use ndarray::{s, Array2, ArrayView2};
 use ndarray_linalg::svd::SVD;
 use rand::rngs::SmallRng;
@@ -23,8 +21,8 @@ fn test_irlba(a: Array2<f64>, nu: usize) {
     println!("TSVD: ||AV - US||_F = {}", frobenius(&diff.view()));
 
     //Compare estimated values with np.linalg.svd:
-    let (_, _s_gt, _) = a.svd(true, true).unwrap();
-    let s_gt = _s_gt.slice(s![0..nu]);
+    let (_, s_gt_array, _) = a.svd(true, true).unwrap();
+    let s_gt = s_gt_array.slice(s![0..nu]);
     let err = (&s - &s_gt).mapv(f64::abs);
 
     println!("Estmated/accurate singular values:");
@@ -37,7 +35,7 @@ fn test_irlba(a: Array2<f64>, nu: usize) {
     );
 }
 
-fn frobenius(a: &ArrayView2<f64>) -> f64 {
+fn frobenius(a: &ArrayView2<'_, f64>) -> f64 {
     let mut acc = 0.0;
     for v in a {
         acc += v * v;

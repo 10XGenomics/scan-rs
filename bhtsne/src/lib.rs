@@ -1,5 +1,4 @@
-#![allow(non_snake_case, clippy::upper_case_acronyms)]
-#![deny(warnings)]
+#![expect(non_snake_case, clippy::upper_case_acronyms)]
 
 #[macro_use]
 extern crate smart_default;
@@ -68,7 +67,7 @@ impl BarnesHutTSNE {
                 self.n_dims as c_int,
                 self.perplexity,
                 self.theta,
-                self.seed.map(|x| x as c_int).unwrap_or(RANDOM_STATE),
+                self.seed.map_or(RANDOM_STATE, |x| x as c_int),
                 false,
                 std::ptr::null_mut(),
                 false,

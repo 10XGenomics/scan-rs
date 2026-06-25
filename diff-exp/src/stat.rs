@@ -22,10 +22,10 @@
 use num_traits::Float;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
 use std::mem;
+
 /// Statistics Trait
 ///
 /// It contains `mean`, `sum`, `var`, `percentile`, `median`
-
 pub trait Statistics {
     /// array is the type of the container
     //type Array;
@@ -43,7 +43,7 @@ pub trait Statistics {
     fn median(&self) -> Self::Value;
 }
 
-impl<T: std::clone::Clone + num_traits::cast::ToPrimitive + PartialOrd + Copy> Statistics for [T] {
+impl<T: Clone + num_traits::cast::ToPrimitive + PartialOrd + Copy> Statistics for [T] {
     type Value = f64;
 
     fn sum(&self) -> f64 {

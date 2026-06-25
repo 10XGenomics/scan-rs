@@ -27,6 +27,72 @@ opt-level = 3
 [profile.test]
 opt-level = 3
 
+[workspace.lints.rust]
+# Lint groups
+future_incompatible = "deny"
+nonstandard_style = "deny"
+rust_2018_idioms = "deny"
+unused = "deny"
+warnings = "deny"
+# Individual lints
+unused_qualifications = "deny"
+
+[workspace.lints.clippy]
+complexity = "deny"
+perf = "deny"
+style = "deny"
+suspicious = "deny"
+comparison_chain = { level = "allow", priority = 1 }
+
+# nursery
+needless_collect = "deny"
+or_fun_call = "deny"
+
+# pedantic
+borrow_as_ptr = "deny"
+cloned_instead_of_copied = "deny"
+enum_glob_use = "deny"
+explicit_deref_methods = "deny"
+explicit_into_iter_loop = "deny"
+explicit_iter_loop = "deny"
+filter_map_next = "deny"
+flat_map_option = "deny"
+from_iter_instead_of_collect = "deny"
+ignored_unit_patterns = "deny"
+implicit_clone = "deny"
+inefficient_to_string = "deny"
+manual_assert = "deny"
+manual_instant_elapsed = "deny"
+manual_is_variant_and = "deny"
+manual_let_else = "deny"
+manual_ok_or = "deny"
+manual_string_new = "deny"
+map_unwrap_or = "deny"
+match_wildcard_for_single_variants = "deny"
+mut_mut = "deny"
+needless_bitwise_bool = "deny"
+needless_continue = "deny"
+needless_for_each = "deny"
+needless_raw_string_hashes = "deny"
+option_as_ref_cloned = "deny"
+ptr_as_ptr = "deny"
+ptr_cast_constness = "deny"
+redundant_closure_for_method_calls = "deny"
+redundant_else = "deny"
+ref_as_ptr = "deny"
+semicolon_if_nothing_returned = "deny"
+single_char_pattern = "deny"
+unchecked_time_subtraction = "deny"
+unicode_not_nfc = "deny"
+uninlined_format_args = "deny"
+unnecessary_join = "deny"
+unnecessary_wraps = "deny"
+unnested_or_patterns = "deny"
+unused_self = "deny"
+used_underscore_binding = "deny"
+wildcard_imports = "deny"
+
 [workspace.dependencies]
 itertools = ">=0.10"
-rand = { version = "0.9", default-features = false, features = ["small_rng"] }
+rand = { version = "0.10", default-features = false }
+rand_distr = "0.6"

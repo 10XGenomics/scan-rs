@@ -1,0 +1,4 @@
+hdf5-io/test/** filter=lfs diff=lfs merge=lfs -text
+leiden/testdata/** filter=lfs diff=lfs merge=lfs -text
+scan-rs/test/** filter=lfs diff=lfs merge=lfs -text
+umap-rs/testdata/** filter=lfs diff=lfs merge=lfs -text

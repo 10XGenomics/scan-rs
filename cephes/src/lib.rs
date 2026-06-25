@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 mod beta;
 mod betainc;
 mod betaincinv;

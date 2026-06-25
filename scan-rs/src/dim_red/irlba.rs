@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use super::{DataMat, Pca, PcaResult};
 use ndarray::linalg::Dot;
 use ndarray::prelude::*;
@@ -11,14 +9,14 @@ use snoop::CancelProgress;
 use std::cmp::{max, min};
 use std::ops::Mul;
 
-fn norm<T: LinalgScalar + Mul + Float>(x: &ArrayView1<T>) -> T {
+fn norm<T: LinalgScalar + Mul + Float>(x: &ArrayView1<'_, T>) -> T {
     x.fold(T::zero(), |sum, v| sum + (*v) * (*v)).sqrt()
 }
 
 /// Orthogonalize a vector or matrix Y against the columns of the matrix X.
 /// This function requires that the column dimension of Y is less than X and
 /// that Y and X have the same number of rows.
-fn orthog<T: LinalgScalar>(y: &ArrayView1<T>, x: &ArrayView2<T>) -> Array1<T> {
+fn orthog<T: LinalgScalar>(y: &ArrayView1<'_, T>, x: &ArrayView2<'_, T>) -> Array1<T> {
     let dot_y = &x.t().dot(y);
     y - &x.dot(dot_y)
 }
@@ -68,7 +66,6 @@ where
     }
 }
 
-#[allow(non_snake_case)]
 /// Implementation of the IRLBA algorithm. Perform the SVD of matrix `A`, retaining `nu` singlular dimenstion
 /// Try to acheive tolerance `tol`, stop after at most `maxit` iterations.
 pub fn irlba<T>(
@@ -84,14 +81,8 @@ where
 {
     let m = A.shape()[0];
     let n = A.shape()[1];
-
-    if m < 2 || n < 2 {
-        panic!("The input matrix must be at least 2x2.");
-    }
-
-    if nu > std::cmp::min(m, n) {
-        panic!("invalid k");
-    }
+    assert!(!(m < 2 || n < 2), "The input matrix must be at least 2x2.");
+    assert!(nu <= min(m, n), "invalid k");
 
     let m_b = min(nu + 20, min(3 * nu, n));
     let mut mprod = 0;
@@ -153,7 +144,7 @@ where
             F *= finv;
 
             if j == m_b - 1 {
-                B[(j, j)] = s
+                B[(j, j)] = s;
             } else {
                 V.column_mut(j + 1).assign(&F);
                 B[(j, j)] = s;

@@ -1,5 +1,4 @@
 /// differential expression algo
-#[allow(clippy::module_inception)]
 pub mod diff_exp;
 /// distribution extension
 pub mod dist;
@@ -7,9 +6,12 @@ pub mod dist;
 pub mod gamma;
 /// statistics extension
 pub mod stat;
-/// utils for testing and integration with xena
+/// utils for testing and integration
 pub mod utils;
 
 pub use crate::diff_exp::{
-    compute_sseq_params, sseq_differential_expression, sseq_differential_expression_with_cancellation,
+    compute_sseq_params, sseq_de_from_sums, sseq_de_from_sums_with_cancellation, sseq_differential_expression,
+    sseq_differential_expression_backend, sseq_differential_expression_with_cancellation,
+    sseq_differential_expression_with_cancellation_backend, sseq_params_from_moments,
 };
+pub use crate::dist::NbExactBackend;

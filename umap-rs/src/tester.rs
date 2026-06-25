@@ -50,6 +50,7 @@ pub mod test {
         let samples = data.shape()[0];
         let tick = Instant::now();
         #[cfg(feature = "plotly")]
+        #[expect(clippy::used_underscore_binding)]
         let colors_map: Vec<_> = _data_raw.iter().map(|item| item.id as i32).collect();
         let umap: Umap = Umap::new(Some(distance_type), 2, 0.01, 1.0, 10, None);
 

@@ -1,6 +1,4 @@
-#![deny(warnings)]
-
-#[allow(unused_extern_crates)]
+#[expect(unused_extern_crates)]
 extern crate blas_src;
 
 pub mod curve_fit;

@@ -1,5 +1,6 @@
 use ndarray::prelude::*;
 use num_traits::Num;
+use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
 /// Trait to apply a mapping function to each non-zero cell of the matrix, which
@@ -93,7 +94,7 @@ impl<In, Out, M> Eq for TransposeMap<In, Out, M> where M: MatrixMap<In, Out> {}
 /// Note: can't derive PartialEq; for details see
 /// <https://github.com/rust-lang/rust/issues/52079>
 /// <https://github.com/rust-lang/rust/issues/26925>
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MatrixIntoMap<In, Out> {
     _in: PhantomData<In>,
     _out: PhantomData<Out>,
@@ -331,11 +332,11 @@ mod test {
     use crate::mat::test as mat_test;
     use ndarray::{ArrayView, Dimension};
     use rand::distr::Uniform;
-    use rand::prelude::{SeedableRng, *};
     use rand::rngs::SmallRng;
+    use rand::{RngExt, SeedableRng};
 
     // stolen from ndarray - not currently exported.
-    fn assert_close<D>(a: ArrayView<f64, D>, b: ArrayView<f64, D>)
+    fn assert_close<D>(a: ArrayView<'_, f64, D>, b: ArrayView<'_, f64, D>)
     where
         D: Dimension,
     {

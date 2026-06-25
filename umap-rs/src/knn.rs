@@ -21,7 +21,7 @@ impl<'a> Sample<'a> {
 }
 
 /// `MetricSpace` makes items comparable. It's a bit like Rust's `PartialOrd`.
-impl vpsearch::MetricSpace for Sample<'_> {
+impl MetricSpace for Sample<'_> {
     type UserData = DistanceFn;
     type Distance = NoisyFloat<Q, NumChecker>;
 
@@ -85,7 +85,7 @@ where
     Item: MetricSpace<Impl> + Clone,
     Item::Distance: Ord,
 {
-    type Output = std::iter::Cloned<std::slice::Iter<'a, (Item::Distance, usize)>>;
+    type Output = std::iter::Copied<std::slice::Iter<'a, (Item::Distance, usize)>>;
 
     #[inline]
     fn consider(&mut self, _: &Item, distance: Item::Distance, candidate_index: usize, _: &Item::UserData) {
@@ -105,7 +105,7 @@ where
     }
 
     fn result(self, _: &Item::UserData) -> Self::Output {
-        self.distance_x_index.as_slice().iter().cloned()
+        self.distance_x_index.as_slice().iter().copied()
     }
 }
 
@@ -133,7 +133,7 @@ pub fn nearest_neighbors(
         .axis_iter(Axis(0))
         .enumerate()
         .map(|(idx, _)| Sample::new(data.slice(s![idx, ..]).to_slice().unwrap(), idx))
-        .collect::<Vec<Sample>>();
+        .collect::<Vec<Sample<'_>>>();
     let vp = Tree::new_with_user_data_ref(&samples, &metric);
 
     let mut indices = Array2::from_elem((samples_size, k), usize::MAX);

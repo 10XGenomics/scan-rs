@@ -20,6 +20,9 @@ include = [
     "contrib/tsne/tsne/bh_sne_src/vptree.h",
 ]
 
+[lints]
+workspace = true
+
 [dependencies]
 ndarray = "0.16"
 smart-default = "*"

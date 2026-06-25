@@ -29,7 +29,7 @@ where
             Some(vector) => vector.sort_unstable(),
             None => panic!("An attempt was made to calculate a median value for non-contiguous data"),
         }
-        Ok(if xs.len() % 2 == 0 {
+        Ok(if xs.len().is_multiple_of(2) {
             (xs[xs.len() / 2] + xs[xs.len() / 2 - 1]) / (T::from_u64(2).unwrap())
         } else {
             xs[xs.len() / 2]
@@ -52,7 +52,7 @@ where
 {
     let result: Result<Vec<_>, _> = x
         .axis_iter_mut(Axis(0))
-        .map(|mut f: ArrayViewMut<T, Ix1>| median_mut(&mut f))
+        .map(|mut f: ArrayViewMut<'_, T, Ix1>| median_mut(&mut f))
         .collect();
     result
 }
@@ -87,8 +87,8 @@ mod test_stats {
         // results, note one method takes the matrix, the other the transpose of it.
         // this is to verify the change we made to merge_clusters when calculating the median is
         // still a-okay.
-        let mut test_array = Array2::<N64>::from_shape_fn((20, 10), |(i, j)| (n64(i as f64) * n64(j as f64)));
-        let mut test_array_transpose = Array2::<N64>::from_shape_fn((10, 20), |(i, j)| (n64(j as f64) * n64(i as f64)));
+        let mut test_array = Array2::<N64>::from_shape_fn((20, 10), |(i, j)| n64(i as f64) * n64(j as f64));
+        let mut test_array_transpose = Array2::<N64>::from_shape_fn((10, 20), |(i, j)| n64(j as f64) * n64(i as f64));
         let medians_old = test_array
             .quantile_axis_mut(Axis(0), n64(0.5), &Midpoint {})
             .expect("quantile failure!");

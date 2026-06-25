@@ -1,7 +1,7 @@
 use anyhow::Error;
 use ndarray::Axis;
 
-/// Retrieve clustering information for analysis.hdf5 produced by xena pipeline
+/// Retrieve clustering information for analysis.hdf5
 pub fn get_clustering(analysis_h5: &str, clustering_key: &str) -> Result<(u16, Vec<i16>), Error> {
     let clusterings = hdf5::File::open(analysis_h5)?
         .group("clustering")?
@@ -18,7 +18,7 @@ pub fn get_clustering(analysis_h5: &str, clustering_key: &str) -> Result<(u16, V
     Ok((num_clusters, clusters))
 }
 
-/// Read the result of differential expression computed on xena pipeline
+/// Read the result of differential expression
 pub fn get_differential_expression(analysis_h5: &str, clustering_key: &str) -> Result<Vec<Vec<f64>>, Error> {
     let mut ret = Vec::<Vec<f64>>::new();
     let differential_expression = hdf5::File::open(analysis_h5)?

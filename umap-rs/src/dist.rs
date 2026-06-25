@@ -12,7 +12,6 @@ pub struct DistanceType(pub(crate) DistanceTypeImpl);
 impl DistanceType {
     pub fn euclidean() -> Self {
         DistanceType(DistanceTypeImpl::Euclidean {
-            dist: distance_functions::euclidean,
             metric: distance_functions::euclidean,
             metric2dist: |x| x,
         })
@@ -21,7 +20,6 @@ impl DistanceType {
         // 1 - rho_{xy} is not a metric, but sqrt(1 - rho_{xy}) is,
         // see: https://arxiv.org/pdf/1908.06029.pdf
         DistanceType(DistanceTypeImpl::Euclidean {
-            dist: distance_functions::pearson,
             metric: |x, y| distance_functions::pearson(x, y).sqrt(),
             metric2dist: |x| x.powi(2),
         })
@@ -29,7 +27,6 @@ impl DistanceType {
     pub fn cosine() -> Self {
         // similar to pearson, the sqrt is a metric
         DistanceType(DistanceTypeImpl::Other {
-            dist: distance_functions::cosine,
             grad: distance_functions::euclidean_grad,
             metric: |x, y| distance_functions::cosine(x, y).sqrt(),
             metric2dist: |x| x.powi(2),
@@ -56,16 +53,13 @@ impl DistanceType {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub(crate) enum DistanceTypeImpl {
     Euclidean {
-        dist: DistanceFn,
         metric: DistanceFn,
         metric2dist: MetricToDistanceFn,
     },
     Other {
-        dist: DistanceFn,
         grad: DistanceGradFn,
         metric: DistanceFn,
         metric2dist: MetricToDistanceFn,
@@ -73,7 +67,6 @@ pub(crate) enum DistanceTypeImpl {
 }
 
 mod distance_functions {
-    #![allow(dead_code)]
     use super::{Array1, Vectorized, Q};
 
     #[inline]
@@ -87,26 +80,6 @@ mod distance_functions {
             1.0
         } else {
             (1.0 - s_xy / (s_xx * s_yy).sqrt()).max(0.0)
-        }
-    }
-
-    #[inline]
-    pub fn cosine_grad(x: &[Q], y: &[Q]) -> (Q, Array1<Q>) {
-        let (s_xx, s_yy, s_xy) = x.iter().zip(y).fold((0., 0., 0.), |acc, (&x, &y)| {
-            (acc.0 + x * x, acc.1 + y * y, acc.2 + x * y)
-        });
-        if s_xx == 0.0 && s_yy == 0.0 {
-            (0.0, Array1::zeros(x.len()))
-        } else if s_xy == 0.0 {
-            (1.0, Array1::zeros(x.len()))
-        } else {
-            let grad = x
-                .iter()
-                .zip(y)
-                .map(|(&x, &y)| -(x * s_xy - y * s_xx) / (s_xx.powi(3) * s_yy).sqrt())
-                .collect();
-            let dist = (1.0 - s_xy / (s_xx * s_yy).sqrt()).max(0.0);
-            (dist, grad)
         }
     }
 
@@ -150,6 +123,7 @@ mod distance_functions {
         }
     }
 
+    #[cfg(test)]
     #[inline]
     pub fn pearson_grad(x: &[Q], y: &[Q]) -> (Q, Array1<Q>) {
         let (mu_x, mu_y) = x.iter().zip(y).fold((0., 0.), |acc, (&x, &y)| (acc.0 + x, acc.1 + y));

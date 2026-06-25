@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use super::{DataMat, Pca, PcaResult};
 use anyhow::{format_err, Error};
 use ndarray::linalg::Dot;
@@ -14,7 +12,6 @@ use snoop::CancelProgress;
 /// Based on the "Randomized Block Krylov Methods for Stronger and Faster Approximate
 /// Singular Value Decomposition", by Cameron and Christopher Musco, NIPS 2015
 /// <https://papers.nips.cc/paper/5735-randomized-block-krylov-methods-for-stronger-and-faster-approximate-singular-value-decomposition.pdf>
-
 /// Settings for Block Krylov SVD
 pub struct BkSvd {
     /// Multiple of the requested k to use as block size in randomized projections,

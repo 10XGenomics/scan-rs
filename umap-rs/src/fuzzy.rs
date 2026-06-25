@@ -9,20 +9,24 @@ const NITER: usize = 64;
 const SMOOTH_K_TOLERANCE: Q = 1e-5;
 const MIN_K_DIST_SCALE: Q = 1e-3;
 
-/// Given a set of data X, a neighborhood size, and a measure of distance compute the fuzzy simplicial set(here represented as a fuzzy graph in the form of a sparse matrix) associated
-/// to the data. This is done by locally approximating geodesic distance at each point, creating a fuzzy simplicial set for each such point, and then combining all the local fuzzy
-/// simplicial sets into a global one via a fuzzy union.
-
-///Construct the local fuzzy simplicial sets of each point represented by its distances
-///to its `n_neighbors` nearest neighbors, stored in `knn_indices` and `knn_distances`, normalizing the distances
-///on the manifolds, and converting the metric space to a simplicial set.
-///`n_points` indicates the total number of points of the original data, while `knn_indices` contains
-///indices of some subset of those points (ie some subset of 1:`n_points`). If `knn_indices` represents
-/// neighbors of the elements of some set with itself, then `knn_distances` should have `n_points` number of
-/// columns. Otherwise, these two values may be nonequivalent.
+/// Given a set of data X, a neighborhood size, and a measure of distance
+/// compute the fuzzy simplicial set(here represented as a fuzzy graph in the
+/// form of a sparse matrix) associated to the data. This is done by locally
+/// approximating geodesic distance at each point, creating a fuzzy simplicial
+/// set for each such point, and then combining all the local fuzzy simplicial
+/// sets into a global one via a fuzzy union.
+///
+/// Construct the local fuzzy simplicial sets of each point represented by its
+/// distances to its `n_neighbors` nearest neighbors, stored in `knn_indices`
+/// and `knn_distances`, normalizing the distances on the manifolds, and
+/// converting the metric space to a simplicial set. `n_points` indicates the
+/// total number of points of the original data, while `knn_indices` contains
+/// indices of some subset of those points (ie some subset of 1:`n_points`).
+/// If `knn_indices` represents neighbors of the elements of some set with
+/// itself, then `knn_distances` should have `n_points` number of columns.
+/// Otherwise, these two values may be nonequivalent.
 /// If `apply_fuzzy_combine` is true, use intersections and unions to combine
-///fuzzy sets of neighbors (default true).
-
+/// fuzzy sets of neighbors (default true).
 pub fn fuzzy_simplicial_set(
     knn_indices: &Array2<P>,
     knn_distances: &Array2<Q>,
@@ -75,7 +79,7 @@ fn smooth_knn_distances(
         let non_zero_dist = knn_distances
             .row(i)
             .into_iter()
-            .cloned()
+            .copied()
             .filter(|&d| d > 0.0)
             .collect::<Vec<Q>>();
         if non_zero_dist.len() >= local_connectivity as usize {
@@ -110,7 +114,7 @@ fn smooth_knn_distances(
 }
 
 /// calculate sigma for an individual point
-fn smooth_knn_dist(distances: ArrayView1<Q>, rho: Q, k: usize, bandwidth: Q, n_iter: usize) -> Q {
+fn smooth_knn_dist(distances: ArrayView1<'_, Q>, rho: Q, k: usize, bandwidth: Q, n_iter: usize) -> Q {
     let target = (k as Q).log2() * bandwidth;
     let mut lo = 0.0;
     let mut mid = 1.0;
@@ -133,7 +137,7 @@ fn smooth_knn_dist(distances: ArrayView1<Q>, rho: Q, k: usize, bandwidth: Q, n_i
             if hi == Q::MAX {
                 mid *= two;
             } else {
-                mid = lo + (hi - lo) / two
+                mid = lo + (hi - lo) / two;
             }
         }
     }
@@ -189,7 +193,7 @@ mod tests {
         let umap_graph = fuzzy_simplicial_set(&knns, &dists, 1.0, 1., true, Some(NITER), Some(1.0));
         //let t = umap_graph.clone().transpose_into();
         //assert_eq!(umap_graph, t);
-        assert_eq!(umap_graph.shape(), (3, 3))
+        assert_eq!(umap_graph.shape(), (3, 3));
     }
     #[test]
     fn smooth_knn_dist_test() {

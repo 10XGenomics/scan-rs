@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use super::{DataMat, Pca, PcaResult};
 use anyhow::{format_err, Error};
 use ndarray::linalg::Dot;

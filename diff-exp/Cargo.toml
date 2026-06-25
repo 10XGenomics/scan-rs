@@ -5,31 +5,43 @@ authors = ["10x Genomics"]
 license-file = "../LICENSE"
 edition = "2021"
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = "1"
 cephes = { path = "../cephes" }
-scan-types = { path = "../scan-types" }
+csv = { version = "1", optional = true }
+hdf5-io = { path = "../hdf5-io", optional = true }
+maplit = { version = "1", optional = true }
 ndarray = { version = "0.16", features = ["rayon"] }
-num-traits = "0.2"
 noisy_float = "0.2"
-sqz = { path = "../sqz" }
+num-traits = "0.2"
+scan-types = { path = "../scan-types" }
 serde = { version = "1", features = ["derive"], optional = true }
 snoop = { path = "../snoop" }
+sqz = { path = "../sqz" }
+
+[dependencies.hdf5]
+package = "hdf5-metno"
+git = "https://github.com/10XGenomics/hdf5-rust"
+branch = "main"
+features = ["static", "zlib"]
+optional = true
 
 [dev-dependencies]
 approx = "0.5"
-assert_approx_eq = "*"
-csv = "*"
-flate2 = "*"
+assert_approx_eq = "1"
+csv = "1"
+flate2 = "1"
 ndarray-npy = { version = "0.9", default-features = false, features = [
     "npz",
     "compressed_npz",
 ] }
 ordered-float = ">=2, <6"
 rand.workspace = true
-serde = { version = "*", features = ["derive"] }
-serde_json = "1.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [features]
-default = []
-hdf5 = []
+hdf5 = ["dep:csv", "dep:hdf5", "dep:hdf5-io", "dep:maplit"]

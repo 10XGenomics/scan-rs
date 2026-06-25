@@ -1,5 +1,5 @@
 use crate::mat::AdaptiveMatNum;
-use crate::{ada_expand, AbstractVec, AdaptiveMat, AdaptiveVec, MatrixMap};
+use crate::{AbstractVec, AdaptiveMat, AdaptiveVec, MatrixMap};
 use multiversion::multiversion;
 use ndarray::{ArrayBase, ArrayView, ArrayViewMut, Axis, Ix1, Ix2};
 use num_traits::Num;
@@ -38,18 +38,10 @@ fn csrmat_densemat_mult<'a, 'b, N, D, M, A, DS>(
     A: 'a + Num + Copy + Mul<N, Output = A> + Clone,
     DS: 'b + ndarray::Data<Elem = A>,
 {
-    if lhs.cols() != rhs.shape()[0] {
-        panic!("Dimension mismatch");
-    }
-    if lhs.rows() != out.shape()[0] {
-        panic!("Dimension mismatch");
-    }
-    if rhs.shape()[1] != out.shape()[1] {
-        panic!("Dimension mismatch");
-    }
-    if !lhs.is_csr() {
-        panic!("Storage mismatch");
-    }
+    assert!(lhs.cols() == rhs.shape()[0], "Dimension mismatch");
+    assert!(lhs.rows() == out.shape()[0], "Dimension mismatch");
+    assert!(rhs.shape()[1] == out.shape()[1], "Dimension mismatch");
+    assert!(lhs.is_csr(), "Storage mismatch");
 
     let axis0 = Axis(0);
 
@@ -72,18 +64,10 @@ fn cscmat_densemat_mult<'a, 'b, N, D, M, A, DS>(
     A: 'a + Num + Copy + Mul<N, Output = A> + Clone,
     DS: 'b + ndarray::Data<Elem = A>,
 {
-    if lhs.cols() != rhs.shape()[0] {
-        panic!("Dimension mismatch");
-    }
-    if lhs.rows() != out.shape()[0] {
-        panic!("Dimension mismatch");
-    }
-    if rhs.shape()[1] != out.shape()[1] {
-        panic!("Dimension mismatch");
-    }
-    if !lhs.is_csc() {
-        panic!("Storage mismatch");
-    }
+    assert!(lhs.cols() == rhs.shape()[0], "Dimension mismatch");
+    assert!(lhs.rows() == out.shape()[0], "Dimension mismatch");
+    assert!(rhs.shape()[1] == out.shape()[1], "Dimension mismatch");
+    assert!(lhs.is_csc(), "Storage mismatch");
 
     let axis0 = Axis(0);
 
@@ -113,9 +97,7 @@ fn vec_mulacc_dense_rowmaj<'a, 'b, N, V, M, A, DS>(
     A: 'a + Num + Copy + Mul<N, Output = A> + Clone,
     DS: 'b + ndarray::Data<Elem = A>,
 {
-    if lhs.len() != rhs.shape()[0] {
-        panic!("Dimension mismatch");
-    }
+    assert!(lhs.len() == rhs.shape()[0], "Dimension mismatch");
 
     if rhs.is_standard_layout() && out.is_standard_layout() {
         let rhs_mat = rhs.as_slice().unwrap();
@@ -173,7 +155,7 @@ fn colvec_mulacc_dense_rowmaj<'a, 'b, N, V, M, A>(
     lhs: &V,
     lhs_col: usize,
     matrix_map: &M,
-    rhs: &ArrayView<A, Ix1>,
+    rhs: &ArrayView<'_, A, Ix1>,
     out: &mut ArrayViewMut<'a, A, Ix2>,
 ) where
     N: Copy,
@@ -181,9 +163,7 @@ fn colvec_mulacc_dense_rowmaj<'a, 'b, N, V, M, A>(
     M: MatrixMap<u32, N>,
     A: 'a + Num + Copy + Mul<N, Output = A> + Clone,
 {
-    if lhs.len() != out.shape()[0] {
-        panic!("Dimension mismatch");
-    }
+    assert!(lhs.len() == out.shape()[0], "Dimension mismatch");
 
     if rhs.is_standard_layout() && out.is_standard_layout() {
         let rhs_slice = rhs.as_slice().unwrap();

@@ -38,15 +38,33 @@ pub fn adjusted_pvalue_bh(pvalue: &[(usize, f64)]) -> Vec<(usize, f64)> {
     // compute q = np.minimum(1, np.minimum.accumulate(scale * p[descending])
     let len = arr.len() as f64;
     let mut min = f64::MAX;
-    for (idx, (_, ref mut val)) in arr.iter_mut().enumerate() {
+    for (idx, (_, val)) in arr.iter_mut().enumerate() {
         *val *= len / (len - idx as f64);
         if *val < min {
-            min = *val
+            min = *val;
         }
         *val = min.min(1.0);
     }
 
     arr
+}
+
+/// Backend selection for the negative-binomial pairwise exact test.
+///
+/// `LogSpace` is the original, always-valid log-sum-exp implementation
+/// ([`nb_exact_test`]). `Ratio` selects the transcendental-free, mode-anchored
+/// ratio recurrence ([`nb_exact_test_ratio`]), which is algebraically identical
+/// but deletes the per-term log/exp/gamma work; it falls back to `LogSpace` when
+/// the observed term underflows. `LogSpace` is the default and is retained
+/// permanently as both the fallback and the differential test oracle.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NbExactBackend {
+    /// Log-space log-sum-exp implementation (default).
+    #[default]
+    LogSpace,
+    /// Mode-anchored rational ratio recurrence.
+    Ratio,
 }
 
 /// nb_exact_test
@@ -93,6 +111,107 @@ pub fn nb_exact_test(x_a: u64, x_b: u64, size_factor_a: f64, size_factor_b: f64,
     sum_ext = sum_ext.ln() + max_ext;
 
     (sum_ext - sum_all).exp()
+}
+
+/// Ratio of consecutive unnormalized terms `T(k+1)/T(k)` of the conditional NB
+/// distribution summed by the exact test. Purely rational — no log/exp/gamma:
+///
+/// `T(k+1)/T(k) = (sa_r + k)(n - k) / ((k + 1)(sb_r + n - k - 1))`,
+///
+/// where `sa_r = size_factor_a / phi` and `sb_r = size_factor_b / phi`. Used to
+/// sweep the term array in [`nb_exact_test_ratio`] without transcendental calls.
+#[inline]
+fn nb_exact_ratio_step(k: f64, n: f64, sa_r: f64, sb_r: f64) -> f64 {
+    (sa_r + k) * (n - k) / ((k + 1.0) * (sb_r + n - k - 1.0))
+}
+
+/// nb_exact_test_ratio
+/// Mode-anchored, transcendental-free variant of [`nb_exact_test`] that computes
+/// the same conditional exact-test p-value via the multiplicative ratio
+/// recurrence (`nb_exact_ratio_step`) rather than a log-sum-exp over per-term
+/// gamma values. The sweep is anchored at the first downward step (`U[anchor] =
+/// 1`); the normalizing constant cancels in `sum_ext / sum_all`, so the choice of
+/// anchor affects only numerical range, not the result.
+///
+/// For the usual unimodal distribution the anchor is the mode (the sequence
+/// maximum), so every other term is `<= 1` and nothing can overflow. In the
+/// U-shaped regime (both `sa_r = size_factor_a/phi` and `sb_r = size_factor_b/phi`
+/// below 1) the distribution is bimodal with maxima at the boundaries `k = 0` and
+/// `k = N`; the anchor then lands on the `k = 0` boundary, which is only a *local*
+/// maximum. Terms can therefore exceed 1 while sweeping up toward `k = N`, but the
+/// growth is bounded by `U[N]/U[0] ~ N^(sa_r - sb_r)` with `|sa_r - sb_r| < 1` —
+/// sub-linear in `N`. For realistic O(1) size factors (and `size_factor == 0`
+/// guarded below) this stays many orders of magnitude below the `f64` overflow
+/// threshold even at `N ~ 800k`, so no term overflows in practice. Far-tail terms
+/// merely underflow toward 0.
+///
+/// When the observed term `U[x_a]` underflows to `0.0` (or is non-finite) the
+/// rational partition would return a spurious exact `0.0`, so this falls back to
+/// the validated log-space [`nb_exact_test`] (which anchors on the observed
+/// term and stays accurate down to ~1e-308). The degenerate-input guards
+/// (`x_a + x_b == 0`, `phi == 0`, `size_factor == 0`) return exactly `1.0`,
+/// bit-identical to [`nb_exact_test`].
+#[inline]
+pub fn nb_exact_test_ratio(x_a: u64, x_b: u64, size_factor_a: f64, size_factor_b: f64, mu: f64, phi: f64) -> f64 {
+    if x_a + x_b == 0u64 {
+        return 1f64;
+    }
+
+    if phi == 0f64 {
+        return 1f64;
+    }
+
+    if size_factor_a == 0f64 || size_factor_b == 0f64 {
+        return 1f64;
+    }
+
+    let n = x_a + x_b;
+    let nn = n as f64;
+    let r = 1f64 / phi;
+    let sa_r = size_factor_a * r;
+    let sb_r = size_factor_b * r;
+
+    // Anchor at the first k whose forward ratio drops below 1 (else n). For a
+    // unimodal distribution this is the mode (global max); in the U-shaped regime
+    // it is the k=0 boundary (a local max) — see the doc comment for why the
+    // anchor choice is correct either way and stays within f64 range.
+    let mut mode = n;
+    for k in 0..n {
+        if nb_exact_ratio_step(k as f64, nn, sa_r, sb_r) < 1.0 {
+            mode = k;
+            break;
+        }
+    }
+
+    // Build the unnormalized terms anchored at U[mode] = 1, sweeping out in both
+    // directions. The large normalizing constant cancels in sum_ext / sum_all.
+    let mut u = vec![0f64; n as usize + 1];
+    u[mode as usize] = 1f64;
+    for k in mode..n {
+        u[(k + 1) as usize] = u[k as usize] * nb_exact_ratio_step(k as f64, nn, sa_r, sb_r);
+    }
+    for k in (0..mode).rev() {
+        u[k as usize] = u[(k + 1) as usize] / nb_exact_ratio_step(k as f64, nn, sa_r, sb_r);
+    }
+
+    let u_obs = u[x_a as usize];
+
+    // Deep-tail fallback: a 0.0/non-finite observed term would make the
+    // rational partition return a spurious 0.0, so defer to the log-space method.
+    if u_obs == 0f64 || !u_obs.is_finite() {
+        return nb_exact_test(x_a, x_b, size_factor_a, size_factor_b, mu, phi);
+    }
+
+    let mut sum_all = 0f64;
+    let mut sum_ext = 0f64;
+    for &v in &u {
+        sum_all += v;
+        if v <= u_obs {
+            sum_ext += v;
+        }
+    }
+
+    sum_ext / sum_all
 }
 
 fn beta_cdf(a: f64, b: f64, x: f64) -> f64 {
@@ -321,5 +440,55 @@ mod test {
         let res = nb_asymptotic_test(cond_a, cond_b, size_factor_a, size_factor_b, mu, phi);
 
         assert_approx_eq!(7.2549e-07, res, 1e-11f64);
+    }
+
+    // Tier 1 of the ratio-vs-log-space equivalence suite (see the module
+    // overview in `tests/ratio_backend.rs` for the full hierarchy). It lives
+    // here, not there, because it is a white-box test of the *private*
+    // `nb_exact_ratio_step` / `log_prob_all` that an integration test cannot see.
+    //
+    // Isolates the ratio recurrence step from summation / partition logic by
+    // comparing `nb_exact_ratio_step` against the exact ratio of consecutive
+    // log-space terms produced by `log_prob_all`.
+    //
+    // Identity under test:
+    //   nb_exact_ratio_step(k, N, sa*r, sb*r) == exp(lp[k+1] - lp[k])
+    // where lp = log_prob_all(N, sa, sb, mu, r), r = 1/phi. The recurrence is
+    // independent of mu (mu cancels), so mu is held at an arbitrary value.
+    #[test]
+    fn test_nb_exact_ratio_step_matches_logspace() {
+        let sas = [0.6f64, 1.2, 2.0, 3.0];
+        let sbs = [0.6f64, 1.2, 2.0, 3.0];
+        let phis = [0.05f64, 0.3, 1.0, 2.0];
+        let ns = [10u64, 50, 200];
+        let mu = 5.0f64; // arbitrary; recurrence does not depend on mu.
+
+        for &sa in &sas {
+            for &sb in &sbs {
+                for &phi in &phis {
+                    for &n in &ns {
+                        let r = 1.0 / phi;
+                        let lp = log_prob_all(n, sa, sb, mu, r);
+                        assert_eq!(
+                            lp.len(),
+                            (n + 1) as usize,
+                            "log_prob_all should return N+1 terms (sa={sa}, sb={sb}, phi={phi}, N={n})"
+                        );
+                        for k in 0..n {
+                            let step = nb_exact_ratio_step(k as f64, n as f64, sa * r, sb * r);
+                            let expected = (lp[(k + 1) as usize] - lp[k as usize]).exp();
+                            // relative tolerance ~1e-12 with a small absolute floor.
+                            let tol = 1e-10 + 1e-9 * expected.abs();
+                            assert!(
+                                (step - expected).abs() <= tol,
+                                "ratio step mismatch: sa={sa}, sb={sb}, phi={phi}, N={n}, k={k}: \
+                                 step={step}, expected={expected}, diff={}, tol={tol}",
+                                (step - expected).abs()
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
 }

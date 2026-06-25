@@ -1,6 +1,6 @@
 use crate::{Clustering, Network, SimpleClustering, ZeroVec};
 use rand::seq::SliceRandom;
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 pub struct LocalMerging {
     randomness: f64,

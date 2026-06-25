@@ -19,7 +19,7 @@ pub trait IndexTrait:
     + TryFrom<usize>
     + Zero
 where
-    Self: std::marker::Sized,
+    Self: Sized,
 {
 }
 
@@ -125,7 +125,7 @@ where
 }
 
 type EdgeRefsMapper<W, NodeIx> =
-    fn((Index<NodeIx>, &Vec<DiEdge<W, NodeIx>>)) -> Zip<Repeat<Index<NodeIx>>, Iter<DiEdge<W, NodeIx>>>;
+    fn((Index<NodeIx>, &Vec<DiEdge<W, NodeIx>>)) -> Zip<Repeat<Index<NodeIx>>, Iter<'_, DiEdge<W, NodeIx>>>;
 type IndexEdgeMapInput<'a, W, NodeIx> = Zip<Repeat<Index<NodeIx>>, Iter<'a, DiEdge<W, NodeIx>>>;
 type IndexEdgeMapOutput<'a, W, NodeIx> = Zip<NodeIndices<NodeIx>, Iter<'a, Vec<DiEdge<W, NodeIx>>>>;
 

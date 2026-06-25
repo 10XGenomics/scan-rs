@@ -1,8 +1,10 @@
 use crate::label_class::LabelClass;
+use serde::{Deserialize, Serialize};
 use sprs::CsMatI;
 use sqz::AdaptiveMat;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(bound(serialize = "M: Serialize", deserialize = "M: serde::de::DeserializeOwned"))]
 pub struct GenericFeatureBarcodeMatrix<M> {
     pub name: String,
     pub barcodes: Vec<String>,

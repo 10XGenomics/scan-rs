@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![expect(non_snake_case)]
 
 //! Notes on generic matrix algos
 //! For dimensionaltiy reduction algorithms, we want to write the method to be generic
@@ -42,7 +42,7 @@ pub mod rand_svd;
 pub mod bk_svd;
 
 #[cfg(test)]
-pub(crate) mod test;
+mod test;
 
 type PcaResult = (Array2<f64>, Array1<f64>, Array2<f64>);
 
@@ -111,7 +111,7 @@ pub trait Pca<T, N> {
 }
 
 /// Mean-squared value of cells in `a`
-pub fn frobenius(a: &ArrayView2<f64>) -> f64 {
+pub fn frobenius(a: &ArrayView2<'_, f64>) -> f64 {
     let mut acc = 0.0;
     for v in a {
         acc += v * v;

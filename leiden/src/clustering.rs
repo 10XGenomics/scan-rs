@@ -31,7 +31,7 @@ pub trait Clustering: std::fmt::Debug {
     /// Take clustering of the cluster labels, and reassign label to reflect the higher-order clustering
     fn merge_clusters<C: Clustering>(&mut self, cluster_clusterings: &C) {
         for i in 0..self.nodes() {
-            self.set(i, cluster_clusterings.get(self.get(i)))
+            self.set(i, cluster_clusterings.get(self.get(i)));
         }
 
         self.remove_empty_clusters();
@@ -82,7 +82,7 @@ impl Clustering for SimpleClustering {
 
         let mut max_cluster = 0;
 
-        for l in input_labels.iter() {
+        for l in input_labels {
             max_cluster = std::cmp::max(*l, max_cluster);
             labels.push(*l);
         }
@@ -100,7 +100,7 @@ impl Clustering for SimpleClustering {
         let mut cluster_lists = vec![Vec::new(); self.num_clusters()];
 
         for (node, label) in self.labels.iter().enumerate() {
-            cluster_lists[*label].push(node)
+            cluster_lists[*label].push(node);
         }
 
         cluster_lists
@@ -128,7 +128,7 @@ impl Clustering for SimpleClustering {
     fn remove_empty_clusters(&mut self) {
         let mut counts = vec![0; self.num_clusters()];
 
-        for &l in self.labels.iter() {
+        for &l in &self.labels {
             counts[l] += 1;
         }
 
@@ -254,7 +254,7 @@ mod test {
 
         c.remove_empty_clusters();
         assert_eq!(c.num_clusters(), 5);
-        assert_eq!(&c.labels, &vec![0, 1, 2, 3, 4])
+        assert_eq!(&c.labels, &vec![0, 1, 2, 3, 4]);
     }
 
     #[test]

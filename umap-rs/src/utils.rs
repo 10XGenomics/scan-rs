@@ -5,7 +5,7 @@ use plotly::{
     common::{Marker, Mode},
     Layout, Plot, Scatter,
 };
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::fmt::Debug;
 
 pub type Q = f64;
@@ -171,7 +171,7 @@ where
 }
 
 #[cfg(feature = "plotly")]
-fn graph_plot(id: usize, x: Vec<Q>, y: Vec<Q>) -> Box<plotly::traces::Scatter<Q, Q>> {
+fn graph_plot(id: usize, x: Vec<Q>, y: Vec<Q>) -> Box<Scatter<Q, Q>> {
     let color = hex_num_to_rgb(COLORS[id]);
     let label = format!("{id}");
 
@@ -224,7 +224,9 @@ pub fn hex_num_to_rgb(num: usize) -> [u8; 3] {
 }
 
 pub fn uniform(data: &mut [Q], a: Q, random: &mut impl Rng) {
-    data.iter_mut().for_each(|v| *v = random.random_range(-a..a));
+    for v in data {
+        *v = random.random_range(-a..a);
+    }
 }
 
 #[cfg(test)]

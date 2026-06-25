@@ -52,7 +52,7 @@ fn _read_matrix_metadata(filtered_matrix: &Path, retain_feature_like: Option<&st
     })
 }
 
-/// Read a feature barcode matrix with CSC orientation for xena (filtered, analysis h5 file)
+/// Read a feature barcode matrix with CSC orientation (filtered, analysis h5 file)
 fn read_csc_matrix(filtered_matrix: impl AsRef<Path>) -> Result<FeatureBarcodeMatrix, Error> {
     let matrix = hdf5::File::open(&filtered_matrix)?.group("matrix")?;
     let pointers = get_ind_between_u64("indptr", 0, None, &matrix)?;
@@ -283,7 +283,7 @@ pub fn read_umi_counts_from_matrix(matrix: &Group) -> Result<Vec<u32>, Error> {
     for index in (0..csc_pointers.len()).step_by(stride) {
         let mut end_index = index + stride;
         if end_index >= csc_pointers.len() - 1 {
-            end_index = csc_pointers.len() - 1
+            end_index = csc_pointers.len() - 1;
         }
         let block_start = csc_pointers[index];
         let block_end = csc_pointers[end_index];
@@ -326,7 +326,7 @@ mod test {
             .unwrap()
             .0;
 
-        let v = mat.matrix.get(feat_idx, bc_idx).cloned().unwrap_or(0);
+        let v = mat.matrix.get(feat_idx, bc_idx).copied().unwrap_or(0);
 
         // hand checked against same file loaded into Seurat for this barcode & feature.
         assert_eq!(v, 71);

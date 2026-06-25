@@ -5,7 +5,7 @@ use ndarray::Array2;
 use ndarray_linalg::lobpcg::LobpcgResult;
 use ndarray_linalg::{self as na};
 use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng};
 use sprs::{CompressedStorage, CsMat};
 use std::time::Instant;
 
@@ -60,9 +60,7 @@ where
     T3: Copy,
 {
     let mut n = list.len();
-    if other.len() != n {
-        panic!("Error incompatible");
-    }
+    assert!(other.len() == n, "Error incompatible");
     while n > 1 {
         n -= 1;
         let k = random.random_range(0..n + 1);
@@ -127,8 +125,8 @@ fn spectral_layout(graph: &CsMat<Q>, embedding_dim: usize) -> Array2<Q> {
             // check convergence
             for (i, norm) in r_norms.into_iter().enumerate() {
                 if norm > 1e-5 {
-                    warn!("The {}th eigenvalue estimation did not converge!", i);
-                    warn!("Too large deviation of residual norm: {} > 1e-5", norm);
+                    warn!("The {i}th eigenvalue estimation did not converge!");
+                    warn!("Too large deviation of residual norm: {norm} > 1e-5");
                 }
             }
             let mut sorted = values

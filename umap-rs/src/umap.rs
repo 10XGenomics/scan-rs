@@ -22,7 +22,7 @@ impl ProgressReporter {
         }
     }
     pub fn report(&self, progress: f64) {
-        (self.raw_reporter)(self.range * progress)
+        (self.raw_reporter)(self.range * progress);
     }
 }
 
@@ -52,9 +52,10 @@ impl Umap {
         n_neighbors: usize,
         custom_number_of_epochs: Option<usize>,
     ) -> Umap {
-        if custom_number_of_epochs.filter(|&x| x == 0).is_some() {
-            panic!("custom_number_of_epochs, if provided, must be greater than 0");
-        }
+        assert!(
+            custom_number_of_epochs.filter(|&x| x == 0).is_none(),
+            "custom_number_of_epochs, if provided, must be greater than 0"
+        );
 
         let distance_type = distance_type.unwrap_or_else(DistanceType::euclidean);
 

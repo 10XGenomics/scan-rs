@@ -5,6 +5,9 @@ authors = ["10x Genomics"]
 license-file = "../LICENSE"
 edition = "2021"
 
+[lints]
+workspace = true
+
 [dependencies]
 itertools.workspace = true
 kodama = "0.3"

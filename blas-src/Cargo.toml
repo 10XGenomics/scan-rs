@@ -6,6 +6,9 @@ license-file = "../LICENSE"
 edition = "2021"
 include = ["src/lib.rs"]
 
+[lints]
+workspace = true
+
 [target.'cfg(target_os = "macos")'.dependencies]
 accelerate-src = "0.3.2"
 

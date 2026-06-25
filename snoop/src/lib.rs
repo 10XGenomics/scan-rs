@@ -97,7 +97,7 @@ impl AtomicState {
     const MAX_PROGRESS: AtomicProgress = AtomicProgress::MAX >> 1;
 
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 
     pub fn cancel(&self) {
@@ -136,7 +136,7 @@ impl AtomicSnoop {
     }
 
     pub fn cancel(&self) {
-        self.state.cancel()
+        self.state.cancel();
     }
 
     /// returns progress as a fraction [0, 1.0]

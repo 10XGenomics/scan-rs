@@ -1,6 +1,5 @@
 //! Leiden community detection algorithm
 #![deny(missing_docs)]
-#![deny(warnings)]
 
 /// Data structure for storing a clustering of nodes
 pub mod clustering;
@@ -45,6 +44,6 @@ impl<T: Default> ZeroVec for Vec<T> {
 
     fn zero_len(&mut self, len: usize) {
         self.zero();
-        self.resize_with(len, T::default)
+        self.resize_with(len, T::default);
     }
 }

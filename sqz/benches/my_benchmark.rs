@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use ndarray::Array2;
-use rand::prelude::SeedableRng;
 use rand::rngs::SmallRng;
+use rand::SeedableRng;
 use sqz::{gen_rand, prod};
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -19,7 +19,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             let mut test: Array2<u32> = Array2::zeros((rows, cols2));
             prod::mat_densemat_mult(&csr, &m2.view(), test.view_mut());
-        })
+        });
     });
 
     let csc = gen_rand::random_adaptive_mat(rng, rows, cols, range, Some(sprs::CSC));
@@ -29,7 +29,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             let mut test: Array2<u32> = Array2::zeros((rows, cols2));
             prod::mat_densemat_mult(&csc, &m2.view(), test.view_mut());
-        })
+        });
     });
 }
 

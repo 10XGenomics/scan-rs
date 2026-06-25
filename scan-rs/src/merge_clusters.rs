@@ -48,7 +48,7 @@ pub fn relabel_by_size(mut labels: Vec<i16>) -> Vec<i16> {
         .enumerate()
         .map(|(i, j)| (j.0, i as i16))
         .collect::<HashMap<_, _>>();
-    for x in labels.iter_mut() {
+    for x in &mut labels {
         *x = map[x];
     }
     labels
@@ -89,7 +89,7 @@ pub fn merge_clusters(fbm: &FBM, pca: &Array2<f64>, mut labels: Vec<i16>) -> Vec
                 }
                 let cell_indices = {
                     let mut cells = group0.clone();
-                    cells.extend(group1.iter().cloned());
+                    cells.extend(group1.iter().copied());
                     cells.sort_unstable();
                     cells
                 };
@@ -115,7 +115,7 @@ pub fn merge_clusters(fbm: &FBM, pca: &Array2<f64>, mut labels: Vec<i16>) -> Vec
                         leaf0 + 1,
                         leaf1 + 1
                     );
-                    for l in labels.iter_mut() {
+                    for l in &mut labels {
                         use std::cmp::Ordering;
                         match (*l).cmp(&leaf1) {
                             Ordering::Equal => *l = leaf0,

@@ -6,6 +6,9 @@ license-file = "../LICENSE"
 edition = "2021"
 include = ["src/**/*"]
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = "1"
 ball-tree = { git = "https://github.com/10XGenomics/ball-tree.git", rev = "62fe538" }
@@ -19,9 +22,8 @@ ndarray-stats = "0.6"
 noisy_float = "0.2"
 num-traits = "0.2"
 rand.workspace = true
-rand_distr = "0.5"
+rand_distr.workspace = true
 scan-types = { path = "../scan-types" }
-serde = { version = "*", features = ["derive"], optional = true }
 snoop = { path = "../snoop" }
 sprs = { version = "0.11", default-features = false, features = [
     "multi_thread",

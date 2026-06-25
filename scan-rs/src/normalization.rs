@@ -37,7 +37,7 @@ impl FromStr for Normalization {
             "seuratlog" => Ok(Normalization::SeuratLog),
             "binomialdeviance" => Ok(Normalization::BinomialDeviance),
             "binomialpearson" => Ok(Normalization::BinomialPearson),
-            _ => bail!("Normalization not recognized: {}", s),
+            _ => bail!("Normalization not recognized: {s}"),
         }
     }
 }
@@ -131,8 +131,8 @@ where
 /// Log-normalize an `AdaptiveMat` of `u32` and return a `LowRankOffset`:
 /// 1. Scale each column (barcode) to have the same total UMI count given by
 ///    `umi_count_sum`* `size_factors[i]` for the i-th column.
-///     If `umi_count_sum` is `None`, use the median total UMI count
-///     If `size_factors` uses the total UMI counts in each column
+///    If `umi_count_sum` is `None`, use the median total UMI count
+///    If `size_factors` uses the total UMI counts in each column
 /// 2. Apply a transform `x -> log_b(1 + x)`, with `b` specified by `log_base`
 /// 3. Center and scale each row (feature) to mean 0 and variance 1
 pub fn log_normalize_with_size_factor<D, M>(
@@ -515,55 +515,8 @@ mod test_normalization {
         assert!(!norm_mat.fold(false, |acc, x| x.is_nan() || acc));
     }
 
-    //use super::*;
-    //use ndarray::{ArrayView, Dimension};
-
-    // #[test]
-    // fn pcard_test1() {
-    //     let (_mat, mat, zeroed_features) = crate::dim_red::test::cr_test_zeroed_matrix(5, 6, 0.4, 2);
-    //     println!("mat: {:?}", mat);
-    //     let mat: AdaptiveMat<(), Vec<AdaptiveVec>> = AdaptiveMat::<(), Vec<AdaptiveVec>>::from_dense(mat.view());
-
-    //     test_pcard_mat(&mat);
-    // }
-
-    // fn test_pcard_mat(mat: &AdaptiveMat) {
-    //     // make the mapper version of pcard
-    //     let pcard = make_pcard_mapper(&mat);
-
-    //     println!("pcard: {:?}", pcard);
-
-    //     let low_rank_pcard = pca_rd_mat(mat.clone());
-    //     let low_rank_to_dense = low_rank_pcard.to_dense();
-
-    //     // make the dense version of the input matrix
-    //     let d = mat.to_dense();
-
-    //     // map dense matrix to pcard values, with independent impl
-    //     let mut dense_explicit = ndarray::Array2::zeros((mat.rows(), mat.cols()));
-
-    //     for (coord, value) in d.indexed_iter() {
-    //         let (feature, cell) = coord;
-    //         let y = *value as f64;
-
-    //         let n = pcard.n[cell];
-    //         let mu = pcard.n[cell] * pcard.pi[feature];
-    //         let pi_j = pcard.pi[feature];
-
-    //         let sign = if (y - mu) > 0.0 { 1.0 } else { -1.0 };
-    //         let term2 = 2.0 * a_ln_a_over_b(y, mu) + 2.0 * a_ln_a_over_b(n - y, n - mu);
-
-    //         dense_explicit[coord] = sign * term2.sqrt();
-    //     }
-
-    //     println!("explicit: {:?}", dense_explicit);
-    //     println!("lr: {:?}", low_rank_to_dense);
-
-    //     assert_close(low_rank_to_dense.view(), dense_explicit.view());
-    // }
-
     // stolen from ndarray - not currently exported.
-    fn assert_close<D>(a: ArrayView<f64, D>, b: ArrayView<f64, D>)
+    fn assert_close<D>(a: ArrayView<'_, f64, D>, b: ArrayView<'_, f64, D>)
     where
         D: Dimension,
     {

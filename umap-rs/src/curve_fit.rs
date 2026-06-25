@@ -59,7 +59,7 @@ pub struct Minimizer<'a> {
 impl Minimizer<'_> {
     /// Initializes the LM-algorithm. Performs first calculation of model & gradient
     pub fn init<'b>(
-        model: &'b Func1D,
+        model: &'b Func1D<'b>,
         y: &'b Array1<f64>,
         sy: &'b Array1<f64>,
         vary_parameter: &'b Array1<bool>,
@@ -166,13 +166,12 @@ impl Minimizer<'_> {
 
         // take maximum of the absolute value in the respective arrays as metric for the
         // convergence of either the gradient or the parameters
-        let metric_gradient = b.map(|x| x.abs()).to_vec().iter().cloned().fold(f64::NAN, f64::max);
+        let metric_gradient = b.map(|x| x.abs()).iter().copied().fold(f64::NAN, f64::max);
 
         let metric_parameters = (&delta_all / &self.minimizer_parameters)
             .map(|x| x.abs())
-            .to_vec()
             .iter()
-            .cloned()
+            .copied()
             .fold(f64::NAN, f64::max);
 
         let updated_parameters = &self.minimizer_parameters + &delta_all;
@@ -204,7 +203,7 @@ impl Minimizer<'_> {
         loop {
             let update_step = self.lm();
             iterations += 1;
-            info!(">>>>iterations {}", iterations);
+            info!(">>>>iterations {iterations}");
             // compare chi2 before and after with respect to metric to decide if step is accepted
             let rho = (self.chi2 - update_step.chi2) / update_step.metric;
 
@@ -308,7 +307,7 @@ impl Minimizer<'_> {
 
         info!("\t #Chi2:\t{:.6}", self.chi2);
         info!("\t #Red. Chi2:\t{:.6}", self.red_chi2);
-        info!("\t #R2:\t{:.6}", r2);
+        info!("\t #R2:\t{r2:.6}");
         info!("\t #Func. Evaluations:\t{}", self.num_func_evaluation);
         info!("\t #Converged by:\t{}", self.convergence_message);
         info!("---- Parameters ----");
@@ -328,7 +327,6 @@ impl Minimizer<'_> {
     }
 
     /// Calculate the coefficient of determination
-
     pub fn calculate_r2(&self) -> f64 {
         let mean_y = self.y.sum() / self.y.len() as f64;
         let mut res_sum_sq = 0.0;
@@ -364,8 +362,6 @@ mod tests {
                 (-(x - min_dist) / spread).exp()
             }
         });
-        let vec = y.to_vec();
-        println!("{}", vec[0]);
         let model = Func1D::new(&p, &x, curve);
         let sy = Array1::from(vec![1.0; x.len()]);
         let vary_parameter = array![true, true];

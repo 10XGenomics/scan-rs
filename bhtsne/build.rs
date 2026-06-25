@@ -7,7 +7,6 @@ fn main() {
     build
         .cpp(true)
         .warnings(false)
-        .static_flag(true)
         .pic(true)
         .flag_if_supported("-std=c++17")
         .flag_if_supported("/std:c++17")
@@ -41,9 +40,6 @@ fn main() {
         } else {
             build.flag("-mcmpxchg16b");
         }
-    }
-    if cfg!(target_feature = "fma4") {
-        build.flag("-mfma4");
     }
     if cfg!(target_feature = "avx") {
         build.flag("-mavx");

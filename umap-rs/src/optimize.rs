@@ -8,7 +8,7 @@ use crate::func_1d::Func1D;
 use crate::umap::Umap;
 use ndarray::{array, Array1, Array2};
 use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 use rayon::prelude::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 use std::collections::HashMap;
 
@@ -109,7 +109,7 @@ fn add_hashmap_to_vec(base: &mut [f64], update: &HashMap<usize, f64>) {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub fn initialize_optimization(
     umap: &Umap,
     seed: u64,
@@ -221,7 +221,7 @@ fn optimize_layout_step(state: &mut State, thread_pool: Option<&rayon::ThreadPoo
         DistanceTypeImpl::Euclidean { .. } => {
             if let Some(tp) = thread_pool {
                 // go to multi-threaded method
-                optimize_layout_euclidean_threaded(state, tp)
+                optimize_layout_euclidean_threaded(state, tp);
             } else {
                 unreachable!("don't run the single-threaded version -- it will give different results than the thread-pool version due different FP order-of-operations");
 
@@ -240,7 +240,7 @@ fn optimize_layout_step(state: &mut State, thread_pool: Option<&rayon::ThreadPoo
                 */
             }
         }
-        _ => {
+        DistanceTypeImpl::Other { .. } => {
             // TODO: Non-Euclidean distance version has not been parallelized yet
             for i in 0..state.num_samples() {
                 iterate(state, i);
@@ -302,7 +302,7 @@ fn optimize_layout_euclidean_threaded(state: &mut State, thread_pool: &rayon::Th
     state.apply_updates(&finished_updates);
 
     // reset the updates
-    for update in finished_updates.iter_mut() {
+    for update in &mut finished_updates {
         update.clear();
     }
 
@@ -409,9 +409,11 @@ fn iterate(state: &mut State, i: usize) {
     let (a, b, gamma, alpha) = (state.a, state.b, state.gamma, state.alpha);
     let embedded_dim = state.embedding.shape()[1];
 
-    let distance_grad_fn = match state.distance_type.0 {
-        DistanceTypeImpl::Other { grad, .. } => grad,
-        _ => panic!("unreachable"),
+    let DistanceTypeImpl::Other {
+        grad: distance_grad_fn, ..
+    } = state.distance_type.0
+    else {
+        unreachable!()
     };
 
     let (dist_output, grad_dist_output) = output_metric(&state.embedding, j, k, distance_grad_fn);

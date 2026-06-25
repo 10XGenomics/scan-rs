@@ -7,8 +7,27 @@ use std::collections::BTreeSet;
 pub struct LabelClass {
     pub labels: Vec<String>,
     pub offsets: Vec<i64>,
-    #[serde(deserialize_with = "default_if_empty")]
+    #[serde(default, with = "indices_serde")]
     pub indices: Vec<i64>,
+}
+
+mod indices_serde {
+    use super::{Deserialize, Serialize};
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &Vec<i64>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Some(value).serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<i64>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Option::<Vec<i64>>::deserialize(deserializer).map(Option::unwrap_or_default)
+    }
 }
 
 impl LabelClass {
@@ -78,7 +97,7 @@ impl LabelClass {
         let mut idx = 0;
         while idx < self.labels.len() {
             if self.labels[idx].contains(pattern) {
-                idx += 1
+                idx += 1;
             } else {
                 self.remove_index(idx, &mut r);
             }
@@ -104,13 +123,6 @@ impl LabelClass {
     }
 }
 
-pub fn default_if_empty<'de, D, T>(de: D) -> Result<T, D::Error>
-where
-    D: serde::Deserializer<'de>,
-    T: serde::Deserialize<'de> + Default,
-{
-    Option::<T>::deserialize(de).map(std::option::Option::unwrap_or_default)
-}
 /*
 Code used for working with CountMatrices, moved here be shared with PyO3 and hdf5_io
  */
@@ -135,13 +147,22 @@ pub fn make_labelclass_from_feature_type_vector(feature_types: &[String]) -> Res
 #[cfg(test)]
 mod test {
     use super::*;
+    use bincode::{deserialize, serialize};
+
+    fn sample_label_class(indices: bool) -> LabelClass {
+        LabelClass {
+            labels: vec!["a", "b"].into_iter().map(ToString::to_string).collect(),
+            offsets: vec![0, 2],
+            indices: if indices { vec![3, 5, 8] } else { vec![] },
+        }
+    }
 
     #[test]
     fn test_remove_index() {
         let x = LabelClass {
             labels: vec!["a", "b", "c", "d"]
                 .into_iter()
-                .map(std::string::ToString::to_string)
+                .map(ToString::to_string)
                 .collect::<Vec<_>>(),
             offsets: vec![0, 10, 21, 34],
             indices: (0..50).collect::<Vec<_>>(),
@@ -178,5 +199,67 @@ mod test {
         assert_eq!(xd.labels, vec!["a", "b", "c"]);
         assert_eq!(xd.offsets, vec![0, 10, 21]);
         assert_eq!(xd.indices, (0..34).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn test_indices_deserialize_null_as_empty() {
+        // null indices should deserialize as empty vec
+        let json = r#"{"labels": [], "offsets": [], "indices": null}"#;
+        let lc: LabelClass = serde_json::from_str(json).expect("failed to deserialize null indices");
+        assert_eq!(lc.indices, Vec::<i64>::new());
+    }
+
+    #[test]
+    fn test_indices_deserialize_missing_as_default() {
+        // missing indices field should deserialize as empty vec
+        let json = r#"{"labels": [], "offsets": []}"#;
+        let lc: LabelClass = serde_json::from_str(json).expect("failed to deserialize missing indices");
+        assert_eq!(lc.indices, Vec::<i64>::new());
+    }
+
+    #[test]
+    fn test_json_roundtrip_indices() {
+        let label_class = sample_label_class(true);
+        let json = serde_json::to_string(&label_class).unwrap();
+        assert_eq!(json, r#"{"labels":["a","b"],"offsets":[0,2],"indices":[3,5,8]}"#);
+        let round_trip: LabelClass = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(round_trip.labels, label_class.labels);
+        assert_eq!(round_trip.offsets, label_class.offsets);
+        assert_eq!(round_trip.indices, label_class.indices);
+    }
+
+    #[test]
+    fn test_json_roundtrip_no_indices() {
+        let label_class = sample_label_class(false);
+        let json = serde_json::to_string(&label_class).unwrap();
+        assert_eq!(json, r#"{"labels":["a","b"],"offsets":[0,2],"indices":[]}"#);
+        let round_trip: LabelClass = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(round_trip.labels, label_class.labels);
+        assert_eq!(round_trip.offsets, label_class.offsets);
+        assert_eq!(round_trip.indices, label_class.indices);
+    }
+
+    #[test]
+    fn test_bincode_roundtrip_indices() {
+        let label_class = sample_label_class(true);
+        let encoded = serialize(&label_class).unwrap();
+        let round_trip: LabelClass = deserialize(&encoded).unwrap();
+
+        assert_eq!(round_trip.labels, label_class.labels);
+        assert_eq!(round_trip.offsets, label_class.offsets);
+        assert_eq!(round_trip.indices, label_class.indices);
+    }
+
+    #[test]
+    fn test_bincode_roundtrip_no_indices() {
+        let label_class = sample_label_class(false);
+        let encoded = serialize(&label_class).unwrap();
+        let round_trip: LabelClass = deserialize(&encoded).unwrap();
+
+        assert_eq!(round_trip.labels, label_class.labels);
+        assert_eq!(round_trip.offsets, label_class.offsets);
+        assert_eq!(round_trip.indices, label_class.indices);
     }
 }

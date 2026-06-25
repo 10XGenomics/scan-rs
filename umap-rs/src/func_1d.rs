@@ -55,7 +55,7 @@ impl<'a> Func1D<'a> {
                 let mut shifted_parameters = parameters.clone();
                 let mut shift = epsilon * shifted_parameters[i].abs();
                 if shift == 0.0 {
-                    shift = epsilon
+                    shift = epsilon;
                 };
                 shifted_parameters[i] += shift;
 

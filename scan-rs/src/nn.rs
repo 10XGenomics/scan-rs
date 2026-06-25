@@ -35,7 +35,7 @@ impl Point for Pt {
 
 /// Compute the `k` nearest neighbors of each row in `v`, using Euclidean distance. Each row represents a n-dimensional
 /// vector where n is the number of columns in `v`.
-pub fn knn<T>(v: &ArrayView2<f64>, k: usize) -> (Array2<T>, BallTree<Pt, usize>)
+pub fn knn<T>(v: &ArrayView2<'_, f64>, k: usize) -> (Array2<T>, BallTree<Pt, usize>)
 where
     T: Bounded + Clone + Copy + FromPrimitive + Send + Sync + Zero,
 {
@@ -43,7 +43,7 @@ where
     let mut values = Vec::new();
     let (cells, _) = v.dim();
 
-    info!("constructing ball tree of {} points", cells);
+    info!("constructing ball tree of {cells} points");
     for i in 0..cells {
         let pt = Pt(Vec::from(v.row(i).as_slice().unwrap()));
         points.push(pt);
@@ -59,13 +59,13 @@ where
 /// Points in v are not necessarily the same as the points used to build the ball tree.
 /// NOTE: include_self=true only works correctly if the points in v are the same as the
 /// points used to build the ball tree.
-pub fn find_nn<T>(v: &ArrayView2<f64>, k: usize, ball_tree: &BallTree<Pt, usize>, include_self: bool) -> Array2<T>
+pub fn find_nn<T>(v: &ArrayView2<'_, f64>, k: usize, ball_tree: &BallTree<Pt, usize>, include_self: bool) -> Array2<T>
 where
     T: Bounded + Clone + Copy + FromPrimitive + Send + Sync + Zero,
 {
     let (cells, _) = v.dim();
     let mut output = Array2::from_elem((cells, k), T::max_value());
-    info!("querying points for {} neighbors", k);
+    info!("querying points for {k} neighbors");
     output.axis_iter_mut(Axis(0)).into_par_iter().enumerate().for_each_init(
         || ball_tree.query(),
         |query, (cell, mut output)| {
@@ -101,7 +101,7 @@ mod tests {
     }
 
     // Basic n^2 knn algorithm, for testing purposes
-    fn exhaustive_knn(v: &ArrayView2<f64>, k: usize) -> Array2<usize> {
+    fn exhaustive_knn(v: &ArrayView2<'_, f64>, k: usize) -> Array2<usize> {
         let cells = v.shape()[0];
         let mut nns = Vec::new();
         assert!(k < cells);
@@ -129,14 +129,14 @@ mod tests {
             nns.sort();
 
             for i in 0..k {
-                output[(cell, i)] = nns[i].1
+                output[(cell, i)] = nns[i].1;
             }
         }
 
         output
     }
 
-    fn validate_knn(v: &ArrayView2<f64>) {
+    fn validate_knn(v: &ArrayView2<'_, f64>) {
         let full_knn = exhaustive_knn(v, std::cmp::min(v.shape()[0] - 1, 50));
 
         for k in &[1, 5, 10, 25, 50] {
